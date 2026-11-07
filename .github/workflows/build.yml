@@ -12,7 +12,11 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [ '1_2_3', '3_4_5' ]
     steps:
       - uses: actions/checkout@v4
 
@@ -24,7 +28,8 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev             cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
+          sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev \
+            cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
 
       - name: Install clang / lld
         run: |
@@ -35,25 +40,26 @@ jobs:
             echo "LLVM_BIN=/usr/bin" >> $GITHUB_ENV
           fi
 
-      - name: Build kernel
+      - name: Build kernel (${{ matrix.variant }})
         run: |
           export PATH="$LLVM_BIN:$PATH"
           export LLVM=1
+          export PATCH_VARIANT="${{ matrix.variant }}"
           bash build.sh
 
-      - name: Package AnyKernel3 zip
+      - name: Package AnyKernel3 zip (${{ matrix.variant }})
         run: |
           git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
           rm -rf anykernel/.git
           cp out/Image anykernel/Image
           sed -i 's|^do.devicecheck=.*|do.devicecheck=0|' anykernel/anykernel.sh || true
-          cd anykernel && zip -r9 ../nx721j-droidspaces-kernel.zip . > /dev/null
+          cd anykernel && zip -r9 ../nx721j-droidspaces-kernel-${{ matrix.variant }}.zip . > /dev/null
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nx721j-droidspaces-kernel
+          name: nx721j-kernel-${{ matrix.variant }}
           path: |
             out/Image
-            nx721j-droidspaces-kernel.zip
+            nx721j-droidspaces-kernel-${{ matrix.variant }}.zip
           retention-days: 30
