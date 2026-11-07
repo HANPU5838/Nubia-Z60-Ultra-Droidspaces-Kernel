@@ -58,6 +58,10 @@ sed -i 's|^CONFIG_TRIM_UNUSED_KSYMS=.*|# CONFIG_TRIM_UNUSED_KSYMS is not set|' .
 # their protected symbol exports (EACCES) and the system would hang at boot.
 sed -i 's|^CONFIG_MODULE_SIG_PROTECT=.*|# CONFIG_MODULE_SIG_PROTECT is not set|' .config
 
+# Trust the vendor's public module-signing certificate (extracted from the stock
+# kernel image) so the GKI-signed vendor modules verify instead of tainting.
+sed -i "s|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=\"$REPO_DIR/certs/nubia-signing-key.pem\"|" .config
+
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 
 echo "=== verify required options ==="
