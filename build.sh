@@ -54,6 +54,9 @@ patch -p1 < "$PATCH"
 sed -i 's|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION="-android14-11-g716498f88d0f-ab11695701"|' .config
 sed -i 's|^CONFIG_LOCALVERSION_AUTO=.*|# CONFIG_LOCALVERSION_AUTO is not set|' .config
 sed -i 's|^CONFIG_TRIM_UNUSED_KSYMS=.*|# CONFIG_TRIM_UNUSED_KSYMS is not set|' .config
+# Vendor modules are signed with nubia's key; MODULE_SIG_PROTECT would reject
+# their protected symbol exports (EACCES) and the system would hang at boot.
+sed -i 's|^CONFIG_MODULE_SIG_PROTECT=.*|# CONFIG_MODULE_SIG_PROTECT is not set|' .config
 
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 
