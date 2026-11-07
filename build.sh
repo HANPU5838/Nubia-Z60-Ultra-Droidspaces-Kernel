@@ -50,6 +50,11 @@ cat "$FRAGMENT" >> .config
 echo "=== applying SYSVIPC kABI patch ==="
 patch -p1 < "$PATCH"
 
+if [ "${CRC_BYPASS:-0}" = "1" ]; then
+  echo "=== applying CRC tolerance patch ==="
+  patch -p1 < "$REPO_DIR/patches/002-tolerate-crc-drift.patch"
+fi
+
 # keep the exact stock version string / don't trim ksyms
 sed -i 's|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION="-android14-11-g716498f88d0f-ab11695701"|' .config
 sed -i 's|^CONFIG_LOCALVERSION_AUTO=.*|# CONFIG_LOCALVERSION_AUTO is not set|' .config
