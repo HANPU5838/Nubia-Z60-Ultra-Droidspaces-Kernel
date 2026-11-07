@@ -31,14 +31,14 @@ jobs:
           sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev \
             cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
 
-      - name: Install clang / lld
+      - name: Install AOSP clang r487747c (same compiler as the stock kernel)
         run: |
-          sudo apt-get install -y -qq clang-17 lld-17 llvm-17 || sudo apt-get install -y -qq clang lld llvm
-          if [ -x /usr/lib/llvm-17/bin/clang ]; then
-            echo "LLVM_BIN=/usr/lib/llvm-17/bin" >> $GITHUB_ENV
-          else
-            echo "LLVM_BIN=/usr/bin" >> $GITHUB_ENV
-          fi
+          mkdir -p $HOME/clang
+          curl -L --retry 3 -o clang.tar.gz \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/android-14.0.0_r1/clang-r487747c.tar.gz"
+          tar xzf clang.tar.gz -C $HOME/clang
+          $HOME/clang/bin/clang --version | head -1
+          echo "LLVM_BIN=$HOME/clang/bin" >> $GITHUB_ENV
 
       - name: Build kernel (${{ matrix.variant }})
         run: |
