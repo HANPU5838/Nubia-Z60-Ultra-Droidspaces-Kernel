@@ -18,6 +18,8 @@ STOCK_CONFIG="$REPO_DIR/nx721j-stock.config"
 FRAGMENT="$REPO_DIR/config.fragment"
 PATCH="$REPO_DIR/patches/001.GKI-below-6.12-fix_sysvipc_kabi_6_7_8.patch"
 JOBS=${JOBS:-$(nproc)}
+export ARCH=arm64
+export LLVM=1
 
 mkdir -p "$WORK" "$OUT"
 cd "$WORK"
@@ -47,14 +49,14 @@ sed -i 's|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION="-android14-11-g716498f88d
 sed -i 's|^CONFIG_LOCALVERSION_AUTO=.*|# CONFIG_LOCALVERSION_AUTO is not set|' .config
 sed -i 's|^CONFIG_TRIM_UNUSED_KSYMS=.*|# CONFIG_TRIM_UNUSED_KSYMS is not set|' .config
 
-make -j"$JOBS" olddefconfig
+make -j"$JOBS" ARCH=arm64 LLVM=1 olddefconfig
 
 echo "=== verify required options ==="
 grep -E '^CONFIG_(SYSVIPC|IPC_NS|PID_NS|DEVTMPFS|POSIX_MQUEUE)=' .config || true
 grep -E '^CONFIG_LOCALVERSION=' .config
 
 echo "=== building Image ==="
-make -j"$JOBS" Image
+make -j"$JOBS" ARCH=arm64 LLVM=1 Image
 
 cp arch/arm64/boot/Image "$OUT/Image"
 echo "=== DONE: $OUT/Image ==="
