@@ -1,0 +1,59 @@
+name: build-nx721j-droidspaces-kernel
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev             cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
+
+      - name: Install clang / lld
+        run: |
+          sudo apt-get install -y -qq clang-17 lld-17 llvm-17 || sudo apt-get install -y -qq clang lld llvm
+          if [ -x /usr/lib/llvm-17/bin/clang ]; then
+            echo "LLVM_BIN=/usr/lib/llvm-17/bin" >> $GITHUB_ENV
+          else
+            echo "LLVM_BIN=/usr/bin" >> $GITHUB_ENV
+          fi
+
+      - name: Build kernel
+        run: |
+          export PATH="$LLVM_BIN:$PATH"
+          export LLVM=1
+          bash build.sh
+
+      - name: Package AnyKernel3 zip
+        run: |
+          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
+          rm -rf anykernel/.git
+          cp out/Image anykernel/Image
+          sed -i 's|^do.devicecheck=.*|do.devicecheck=0|' anykernel/anykernel.sh || true
+          cd anykernel && zip -r9 ../nx721j-droidspaces-kernel.zip . > /dev/null
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nx721j-droidspaces-kernel
+          path: |
+            out/Image
+            nx721j-droidspaces-kernel.zip
+          retention-days: 30
