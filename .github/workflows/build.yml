@@ -16,7 +16,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [ '3_4_5' ]
+        include:
+          - variant: cfs-only
+            enable_cfs: 1
+            enable_pids: 0
+          - variant: pids-only
+            enable_cfs: 0
+            enable_pids: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -44,22 +50,14 @@ jobs:
         run: |
           export PATH="$LLVM_BIN:$PATH"
           export LLVM=1
-          export PATCH_VARIANT="${{ matrix.variant }}"
+          export PATCH_VARIANT=3_4_5
+          export ENABLE_CFS="${{ matrix.enable_cfs }}"
+          export ENABLE_PIDS="${{ matrix.enable_pids }}"
           bash build.sh
-
-      - name: Package AnyKernel3 zip (${{ matrix.variant }})
-        run: |
-          git clone --depth=1 https://github.com/osm0sis/AnyKernel3.git anykernel
-          rm -rf anykernel/.git
-          cp out/Image anykernel/Image
-          sed -i 's|^do.devicecheck=.*|do.devicecheck=0|' anykernel/anykernel.sh || true
-          cd anykernel && zip -r9 ../nx721j-droidspaces-kernel-${{ matrix.variant }}.zip . > /dev/null
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nx721j-kernel-${{ matrix.variant }}
-          path: |
-            out/Image
-            nx721j-droidspaces-kernel-${{ matrix.variant }}.zip
+          path: out/Image
           retention-days: 30

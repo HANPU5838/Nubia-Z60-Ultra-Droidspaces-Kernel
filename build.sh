@@ -62,11 +62,15 @@ sed -i 's|^CONFIG_MODULE_SIG_PROTECT=.*|# CONFIG_MODULE_SIG_PROTECT is not set|'
 # kernel image) so the GKI-signed vendor modules verify instead of tainting.
 sed -i "s|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=\"$REPO_DIR/certs/nubia-signing-key.pem\"|" .config
 
-# "Perfect" kernel extras: container CPU bandwidth and PID limits.
-# Safe here because CONFIG_FAIR_GROUP_SCHED is already enabled in the stock
-# config, so these only grow the internal cfs_rq structure, not task_struct.
-sed -i 's|^# CONFIG_CFS_BANDWIDTH is not set|CONFIG_CFS_BANDWIDTH=y|' .config
-sed -i 's|^# CONFIG_CGROUP_PIDS is not set|CONFIG_CGROUP_PIDS=y|' .config
+# Optional single-feature experiments (ENABLE_CFS / ENABLE_PIDS); both off by
+# default because enabling them changes exported symbol CRCs and the stock
+# vendor modules then refuse to load (bootloop).
+if [ "${ENABLE_CFS:-0}" = "1" ]; then
+  sed -i 's|^# CONFIG_CFS_BANDWIDTH is not set|CONFIG_CFS_BANDWIDTH=y|' .config
+fi
+if [ "${ENABLE_PIDS:-0}" = "1" ]; then
+  sed -i 's|^# CONFIG_CGROUP_PIDS is not set|CONFIG_CGROUP_PIDS=y|' .config
+fi
 
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 
