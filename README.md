@@ -18,7 +18,9 @@
 
 在保证系统完整可用的前提下，额外开启了 **Droidspaces**（Linux 容器方案）所需的全部内核特性，让手机可以跑完整 Linux 系统（如 Kali / Debian / Ubuntu 容器）。
 
-> 一句话：**一个内核文件，系统功能不缩水，额外获得容器能力。**
+同时，内核**内置支持 Kali NetHunter 的 HID 攻击（BadUSB）能力**，并支持在容器里运行完整 Kali 系统。
+
+> 一句话：**一个内核文件，系统功能不缩水，额外获得容器 + Kali NetHunter（HID）能力。**
 
 ## 📱 支持的系统
 
@@ -59,6 +61,37 @@
 | CPU 带宽限制（--cpus） | ❌ | 见下方原因 |
 | 进程数限制（--pids-limit） | ❌ | 见下方原因 |
 
+## 🐉 Kali NetHunter 支持
+
+| NetHunter 功能 | 支持 | 说明 |
+|---|---|---|
+| **Kali Linux 容器**（Droidspaces） | ✅ | 完整 Kali 环境，nmap / metasploit / sqlmap / hydra 等工具可用 |
+| **HID 攻击**（BadUSB、键盘注入、Rucky） | ✅ | 内核内置 `CONFIG_USB_CONFIGFS_F_HID=y` |
+| **USB 网络共享**（RNDIS） | ✅ | 标准 USB gadget 支持 |
+| **蓝牙功能** | ✅ | 标准蓝牙协议栈 |
+| **WiFi 抓包 / 监听**（airodump-ng） | ❌ | 内置高通 WiFi 驱动不支持 monitor 模式 |
+| **WiFi 数据包注入**（aireplay-ng） | ❌ | 需外接 USB 网卡 + 对应驱动 |
+| **WiFi 破解**（aircrack-ng） | ❌ | 同上 |
+
+### 为什么 WiFi 攻击不可用
+
+```
+手机内置 WiFi 芯片 = 高通 QCA（qca_cld3_kiwi_v2）
+  → 厂商驱动不支持 monitor 模式
+  → 无法抓包、无法注入
+  → 需要外接 USB WiFi 网卡（AR9271 / RT3070 / MT7601 等）
+  → 而当前内核未内置这些外置网卡驱动
+```
+
+**如果以后需要 WiFi 攻击能力**：需要重新编译一个把 `ath9k_htc` / `rt2800usb` / `mt7601u` 等驱动内置进内核的版本，并准备一个外接 USB 网卡。
+
+### 当前可用的 NetHunter 玩法
+
+- ✅ 容器内运行完整 Kali 系统与工具
+- ✅ 手机当 BadUSB（插电脑后模拟键盘输入命令）
+- ✅ USB 网络共享
+- ❌ WiFi 抓包与注入（需外置网卡 + 驱动）
+
 ## ❌ 不支持的功能及原因
 
 ### 1. CPU 带宽限制（`--cpus`）
@@ -81,7 +114,7 @@
 ### 4. 其他未验证场景
 
 - 其他 NX721J 固件版本（如 NebulaOS）——未测试
-- 其他机型（Z60 Ultra 领先版等不同 SoC 版本）——不适用
+- 其他机型（不同 SoC 版本）——不适用
 
 ## 🔧 构建配方
 
