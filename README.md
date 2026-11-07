@@ -1,26 +1,44 @@
-# NX721J Droidspaces 内核构建
+# NX721J Droidspaces Kernel
 
-为 **nubia NX721J（Z60 Ultra，sm8650）** 构建带 Droidspaces 支持的 GKI 内核。
+为 **nubia NX721J（Z60 Ultra，sm8650）** 构建支持 Droidspaces 的 GKI 内核。
 
-## 原理
+## 构建配方
 
-| 项 | 值 |
+| 项目 | 值 |
 |---|---|
-| 源码 | Android Common Kernel (ACK) android14-6.1 @ `716498f88d0f`（与设备原厂内核同源） |
-| 基础配置 | 设备自己的 `/proc/config.gz`（MyOS 14.5.6MR2） |
-| 补丁 | Droidspaces 官方 SYSVIPC kABI 补丁（保持厂商模块可加载） |
-| 版本字符串 | 保持 `6.1.68-android14-11-g716498f88d0f-ab11695701` 不变 |
-| 产物 | `out/Image` + `nx721j-droidspaces-kernel.zip`（AnyKernel3） |
+| 源码 | Android Common Kernel android14-6.1 @ `716498f88d0f`（与设备原厂内核同源） |
+| 编译器 | AOSP clang `r487747c`（17.0.2，与原厂完全一致） |
+| 基础配置 | 设备自身 `/proc/config.gz`（MyOS 14.5.6MR2） |
+| kABI 补丁 | Droidspaces 官方 SYSVIPC 补丁（`3_4_5` 变体） |
+| 版本字符串 | `6.1.68-android14-11-g716498f88d0f-ab11695701`（保持与原厂一致） |
+| 模块签名 | 嵌入原厂公钥证书，关闭 `MODULE_SIG_PROTECT` |
 
-## 使用方法
+## 产物
 
-1. 进入 Actions → `build-nx721j-droidspaces-kernel` → Run workflow
-2. 等待构建完成（约 20-40 分钟）
-3. 下载 artifacts：
-   - `Image`：原始内核镜像
-   - `nx721j-droidspaces-kernel.zip`：AnyKernel3 刷机包（用 KernelSU/Magisk 刷入）
+`out/Image` — 替换 `boot.img` 中的 kernel 即可（boot.img 头部 kernel_size 需同步更新）。
 
-## 说明
+## ⚠️ 绝对不能启用的选项
 
-- 只替换 boot 分区里的内核，厂商模块（vendor_dlkm）保持原样，因为版本字符串和 kABI 都未改变
-- 不含 CONFIG_CFS_BANDWIDTH / CONFIG_CGROUP_PIDS（会破坏 kABI，见 Droidspaces 官方文档）
+`CONFIG_CFS_BANDWIDTH` 和 `CONFIG_CGROUP_PIDS` **会改变调度器/cgroup 结构体，
+导致厂商预编译模块（434 个）CRC 不匹配而拒绝加载 → 无限重启**。
+
+不重建全部厂商模块就无法启用它们（Droidspaces 的 `--cpus` / `--pids-limit` 因此不可用）。
+
+## 已验证的工作配置
+
+```
+CONFIG_SYSVIPC=y          CONFIG_POSIX_MQUEUE=y
+CONFIG_IPC_NS=y           CONFIG_PID_NS=y
+CONFIG_USER_NS=y          CONFIG_DEVTMPFS=y
+CONFIG_TMPFS_POSIX_ACL=y  CONFIG_TMPFS_XATTR=y
+CONFIG_MACVLAN=y          CONFIG_IP6_NF_NAT=y
+CONFIG_IP_SET=y           CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y
+CONFIG_USB_CONFIGFS_F_HID=y（HID 攻击内置支持）
+# CONFIG_CFS_BANDWIDTH is not set
+# CONFIG_CGROUP_PIDS is not set
+# CONFIG_MODULE_SIG_PROTECT is not set
+```
+
+## 刷入方式
+
+用 9008（EDL）写入 `boot_a`，或 root 后用任意内核刷写工具。刷入前务必备份原厂 boot 分区。

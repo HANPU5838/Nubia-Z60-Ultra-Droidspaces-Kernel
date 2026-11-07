@@ -12,15 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - variant: nethunter
-            enable_cfs: 0
-            enable_pids: 0
-            net_hunter: 1
+    timeout-minutes: 150
     steps:
       - uses: actions/checkout@v4
 
@@ -44,21 +36,15 @@ jobs:
           $HOME/clang/bin/clang --version | head -1
           echo "LLVM_BIN=$HOME/clang/bin" >> $GITHUB_ENV
 
-      - name: Build kernel (${{ matrix.variant }})
+      - name: Build kernel
         run: |
           export PATH="$LLVM_BIN:$PATH"
           export LLVM=1
-          export PATCH_VARIANT=3_4_5
-          export ENABLE_CFS="${{ matrix.enable_cfs }}"
-          export ENABLE_PIDS="${{ matrix.enable_pids }}"
-          export NET_HUNTER="${{ matrix.net_hunter }}"
           bash build.sh
 
-      - name: Upload artifacts
+      - name: Upload kernel Image
         uses: actions/upload-artifact@v4
         with:
-          name: nx721j-kernel-${{ matrix.variant }}
-          path: |
-            out/Image
-            out/modules
-          retention-days: 30
+          name: nx721j-droidspaces-Image
+          path: out/Image
+          retention-days: 90
