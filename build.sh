@@ -57,6 +57,11 @@ cp "$STOCK_CONFIG" .config
 echo "=== merging Droidspaces fragment ==="
 cat "$FRAGMENT" >> .config
 
+if [ "${NET_HUNTER:-0}" = "1" ]; then
+  echo "=== merging NetHunter fragment ==="
+  cat "$REPO_DIR/config-nethunter.fragment" >> .config
+fi
+
 # ------------------------------------------------------- kABI patch
 echo "=== applying SYSVIPC kABI patch ==="
 patch -p1 < "$PATCH"
@@ -96,6 +101,26 @@ grep -E '^CONFIG_LOCALVERSION=' .config
 
 echo "=== building Image ==="
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= Image
+
+if [ "${NET_HUNTER:-0}" = "1" ]; then
+  echo "=== building NetHunter wireless modules ==="
+  mkdir -p "$OUT/modules"
+  for t in \
+    drivers/net/wireless/ath/ath.ko \
+    drivers/net/wireless/ath/ath9k/ath9k_htc.ko \
+    drivers/net/wireless/ath/carl9170/carl9170.ko \
+    drivers/net/wireless/ralink/rt2x00/rt2x00lib.ko \
+    drivers/net/wireless/ralink/rt2x00/rt2x00usb.ko \
+    drivers/net/wireless/ralink/rt2x00/rt2800usb.ko \
+    drivers/net/wireless/mediatek/mt7601u/mt7601u.ko \
+    drivers/net/wireless/realtek/rtl8xxxu/rtl8xxxu.ko \
+    drivers/net/wireless/intersil/p54/p54usb.ko \
+    drivers/net/wireless/zydas/zd1211rw/zd1211rw.ko ; do
+    make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= "$t" || echo "  (skip $t)"
+  done
+  find drivers/net/wireless -name '*.ko' -exec cp {} "$OUT/modules/" \; 2>/dev/null || true
+  echo "modules built:"; ls -la "$OUT/modules" 2>/dev/null || true
+fi
 
 cp arch/arm64/boot/Image "$OUT/Image"
 echo "=== DONE: $OUT/Image ==="

@@ -12,15 +12,15 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 180
     strategy:
       fail-fast: false
       matrix:
         include:
-          - variant: full-crc
-            enable_cfs: 1
-            enable_pids: 1
-            crc_bypass: 1
+          - variant: nethunter
+            enable_cfs: 0
+            enable_pids: 0
+            net_hunter: 1
     steps:
       - uses: actions/checkout@v4
 
@@ -51,12 +51,14 @@ jobs:
           export PATCH_VARIANT=3_4_5
           export ENABLE_CFS="${{ matrix.enable_cfs }}"
           export ENABLE_PIDS="${{ matrix.enable_pids }}"
-          export CRC_BYPASS="${{ matrix.crc_bypass }}"
+          export NET_HUNTER="${{ matrix.net_hunter }}"
           bash build.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: nx721j-kernel-${{ matrix.variant }}
-          path: out/Image
+          path: |
+            out/Image
+            out/modules
           retention-days: 30
