@@ -29,8 +29,19 @@ cd "$WORK"
 if [ ! -d "$WORK/ack" ]; then
   echo "=== fetching ACK @ $ACK_COMMIT ==="
   mkdir -p "$WORK/ack"
-  curl -L --retry 3 -o "$WORK/ack.tar.gz" \
-    "https://android.googlesource.com/kernel/common/+archive/$ACK_COMMIT.tar.gz"
+  ACK_OK=0
+  for attempt in 1 2 3 4 5; do
+    echo "=== downloading ACK archive (attempt $attempt) ==="
+    rm -f "$WORK/ack.tar.gz"
+    if curl -L --retry 3 --retry-delay 5 -o "$WORK/ack.tar.gz" \
+         "https://android.googlesource.com/kernel/common/+archive/$ACK_COMMIT.tar.gz" \
+       && tar tzf "$WORK/ack.tar.gz" > /dev/null 2>&1; then
+      ACK_OK=1
+      break
+    fi
+    sleep 10
+  done
+  [ "$ACK_OK" = "1" ] || { echo "ACK archive download failed"; exit 1; }
   tar xzf "$WORK/ack.tar.gz" -C "$WORK/ack"
 fi
 cd "$WORK/ack"
