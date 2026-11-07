@@ -16,7 +16,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [ '1_2_3', '3_4_5' ]
+        variant: [ '3_4_5' ]
     steps:
       - uses: actions/checkout@v4
 
