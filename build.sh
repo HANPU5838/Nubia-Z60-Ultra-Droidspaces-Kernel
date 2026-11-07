@@ -34,6 +34,11 @@ if [ ! -d "$WORK/ack" ]; then
 fi
 cd "$WORK/ack"
 
+# suppress the trailing '+' that setlocalversion adds when the tree sits inside
+# another git checkout: an empty .scmversion and LOCALVERSION= keep the exact
+# stock version string so vendor_dlkm modules keep loading.
+echo -n "" > .scmversion
+
 # ------------------------------------------------- stock config as base
 echo "=== base config = phone stock config ==="
 cp "$STOCK_CONFIG" .config
@@ -49,14 +54,14 @@ sed -i 's|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION="-android14-11-g716498f88d
 sed -i 's|^CONFIG_LOCALVERSION_AUTO=.*|# CONFIG_LOCALVERSION_AUTO is not set|' .config
 sed -i 's|^CONFIG_TRIM_UNUSED_KSYMS=.*|# CONFIG_TRIM_UNUSED_KSYMS is not set|' .config
 
-make -j"$JOBS" ARCH=arm64 LLVM=1 olddefconfig
+make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 
 echo "=== verify required options ==="
 grep -E '^CONFIG_(SYSVIPC|IPC_NS|PID_NS|DEVTMPFS|POSIX_MQUEUE)=' .config || true
 grep -E '^CONFIG_LOCALVERSION=' .config
 
 echo "=== building Image ==="
-make -j"$JOBS" ARCH=arm64 LLVM=1 Image
+make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= Image
 
 cp arch/arm64/boot/Image "$OUT/Image"
 echo "=== DONE: $OUT/Image ==="
