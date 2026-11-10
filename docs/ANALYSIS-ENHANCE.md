@@ -1,104 +1,98 @@
 # 🧠 内核全面增强分析（对标 Android 16/17）
 
-> 目标：在 **不破坏 GKI kABI** 的前提下，把 NX721J（6.1.68）内核的能力、性能和功能尽可能补满，并明确哪些 Android 16/17 的特性无法回移。
+> 目标：在 **不破坏 GKI kABI** 的前提下，把 NX721J（6.1.68）内核的能力尽可能补满，并明确哪些 Android 16/17 特性无法回移。
+>
+> 详细分析见：[ANALYSIS-A16.md](ANALYSIS-A16.md)（Android 16/17 特性回移）与 [ANALYSIS-PERF.md](ANALYSIS-PERF.md)（性能/功能增强清单）。
 
-## 一、当前内核已具备的能力（原厂默认）
+## 一、ABI 判定的三重机制（决定哪些配置能开）
 
-| 类别 | 已启用 |
-|---|---|
-| 调度 | PREEMPT（完整抢占）、UCLAMP、ENERGY_MODEL、schedutil、SCHED_MC |
-| 内存 | MGLRU、THP、DAMON、COMPACTION、MIGRATION、ZONE_DEVICE、PSI |
-| 安全 | KASLR、CFI、Shadow Call Stack、MTE、BTI、PAN/EPAN、INIT_ON_ALLOC、HARDENED_USERCOPY、RANDOMIZE_KSTACK、FORTIFY、STACKPROTECTOR |
-| 加密 | AES/SHA2/GHASH ARM64 CE、CHACHA20_NEON、LSE atomics、CNP |
-| 存储 | F2FS（含压缩）、EROFS、EXFAT、FS_ENCRYPTION、DM_CRYPT、DM_VERITY |
-| I/O | BFQ、KYBER、MQ-DEADLINE、FQ_CODEL、FQ |
-| 网络 | WireGuard（内建）、NF_CONNTRACK/NAT、VETH、BRIDGE |
-| 其他 | io_uring、binderfs、userfaultfd、USB gadget（HID/MassStorage/RNDIS部分） |
-
-## 二、v2 已补（构建中）
-
-LANDLOCK、YAMA、BPF_UNPRIV_DEFAULT_OFF、INIT_ON_FREE、BBR、CAKE、NF_TABLES、NTFS3、ZSWAP、ZRAM_WRITEBACK、MEMCG_SWAP、IP_SET_HASH_NET
-
-## 三、v3 建议补充（ABI 安全，收益明确）
-
-### 3.1 加密性能（直接提升文件读写/网络吞吐）
-
-| 配置 | 作用 | 收益 | 风险 |
-|---|---|---|---|
-| `CONFIG_CRYPTO_CRC32_ARM64_CE=y` | ARMv8 CRC32 硬件指令 | 文件系统校验、网络校验大幅加速 | 极低 |
-| `CONFIG_CRYPTO_AES_ARM64_BS=y` | 位切片 AES | 小包加密更快 | 极低 |
-| `CONFIG_CRYPTO_SM4_ARM64_CE` | SM4 硬件加速 | 国内应用加密加速 | 低 |
-
-### 3.2 文件系统/存储
-
-| 配置 | 作用 | 收益 |
+| 机制 | 源码位置 | 后果 |
 |---|---|---|
-| `CONFIG_SQUASHFS=y` + LZ4/XZ/ZSTD | 只读压缩文件系统 | 容器镜像、只读挂载 |
-| `CONFIG_ISO9660_FS=y` / `CONFIG_UDF_FS=y` | ISO/UDF | 挂载光盘镜像 |
-| `CONFIG_9P_FS=y` | 9P 文件系统 | 虚拟机共享目录 |
-| `CONFIG_CIFS=y` | SMB/CIFS | 访问网络共享 |
-| `CONFIG_ZRAM_DEF_COMP_LZ4=y` | zram 默认 LZ4 | 内存压缩更快 |
+| 1. genksyms CRC | `kernel/module/version.c` `check_version()` | 导出原型里引用的 struct 定义变化 → CRC 变 → 模块拒绝加载 |
+| 2. 全局锚点 `module_layout()` | `version.c:94` | 参数含 `struct module/kernel_param/tracepoint`，任一布局变 → 434 模块全灭 |
+| 3. inline 偏移 | 如 `net_generic()` 读 `net->gen` | 结构体字段偏移变化 → 运行时不匹配（ACK 用 `ext_net` 绕开，证明必须保 `struct net` 不变） |
 
-### 3.3 容器/网络增强
+## 二、可安全开启（v3.1 已启用）
 
-| 配置 | 作用 |
-|---|---|
-| `CONFIG_BRIDGE_NETFILTER=y` | 桥接 + netfilter（Droidspaces 官方推荐） |
-| `CONFIG_VXLAN=y` | VXLAN 隧道（Docker Swarm/K8s） |
-| `CONFIG_IPVLAN=y` | IPVLAN（容器网络模式） |
-| `CONFIG_NETFILTER_XT_MATCH_* 补充` | iptables 匹配扩展 |
+### 容器 / 网络（P0）
+```
+CONFIG_BRIDGE_NETFILTER=y      CONFIG_NF_CONNTRACK_BRIDGE=y
+CONFIG_VXLAN=y                 CONFIG_GENEVE=y
+CONFIG_IPVLAN=y                CONFIG_NET_SCH_DEFAULT=y
+CONFIG_DEFAULT_FQ_CODEL=y      CONFIG_TCP_CONG_ADVANCED=y
+CONFIG_TCP_CONG_BBR=y          CONFIG_NET_SCH_CAKE=y
+```
 
-### 3.4 USB / NetHunter
+### 文件系统（P0）
+```
+CONFIG_SQUASHFS=y（+LZ4/LZO/XZ/ZSTD/FILE_DIRECT/DECOMP_MULTI_PERCPU）
+CONFIG_ISO9660_FS=y（+JOLIET/ZISOFS）   CONFIG_UDF_FS=y
+CONFIG_NTFS3_FS=y                        CONFIG_FANOTIFY=y
+```
 
-| 配置 | 作用 |
-|---|---|
-| `CONFIG_USB_CONFIGFS_RNDIS=y` | RNDIS（Windows USB 网络共享） |
-| `CONFIG_USB_CONFIGFS_F_MIDI=y` | MIDI gadget（可选） |
+### 安全（ABI 安全）
+```
+CONFIG_SECURITY_LANDLOCK=y   CONFIG_SECURITY_YAMA=y
+CONFIG_BPF_LSM=y             CONFIG_BPF_UNPRIV_DEFAULT_OFF=y
+```
 
-### 3.5 绝对不要开启（ABI 破坏 / 不可回移）
+### Android 16 可配置项
+```
+CONFIG_DAMON_PADDR=y  CONFIG_DAMON_RECLAIM=y  CONFIG_DAMON_LRU_SORT=y
+CONFIG_READ_ONLY_THP_FOR_FS=y
+CONFIG_RCU_NOCB_CPU=y  CONFIG_RCU_NOCB_CPU_DEFAULT_ALL=y
+```
+
+## 三、❌ 绝对禁止（ABI 破坏，已实测或已确认）
 
 | 配置 | 原因 |
 |---|---|
-| `CONFIG_CFS_BANDWIDTH` | 改调度器结构体 → 厂商模块 CRC 不匹配（已实测 bootloop） |
-| `CONFIG_CGROUP_PIDS` | 同上（已实测） |
-| `CONFIG_SCHED_CORE` | 向 task_struct 添加字段 → ABI 破坏 |
-| 16KB 页面（`CONFIG_ARM64_16K_PAGES`） | 页面大小改变 → 所有厂商模块不兼容 |
-| 内核 6.12/6.18 新子系统（新 Binder、新 BPF、新调度器） | 无法回移，ABI 不兼容 |
-| `CONFIG_KASAN`、`CONFIG_DEBUG_*` 大量调试项 | 性能严重下降 |
+| `CONFIG_CFS_BANDWIDTH` / `CONFIG_CGROUP_PIDS` | 改调度器/cgroup 结构体 → 模块 CRC 不匹配（已实测 bootloop） |
+| `CONFIG_NF_TABLES` / `NFT_*` | `net_namespace.h:145` 在 `net->gen` 前插入 `netns_nftables` → `dev_get_by_name` 等 CRC + `net_generic()` 偏移双杀 |
+| `CONFIG_SCHED_CORE` | 向 task_struct 加字段 |
+| `CONFIG_CRYPTO_USER` | 在 struct net 加 `crypto_nlsk` |
+| `CONFIG_FUNCTION_TRACER` / `DYNAMIC_FTRACE` | 改 `struct module` → `module_layout` 失效 |
+| `CONFIG_IP_VS`、`NF_CONNTRACK_LABELS`、`TLS_DEVICE`、`MPTCP` | 改 core 结构体/锚点 |
+| 16KB 页 / 48-bit VA | 页面大小/地址空间改变 → 全部模块不兼容 |
+| `IP_ROUTE_MULTIPATH`、`IPV6_SUBTREES` | 改 net 结构偏移 |
 
-## 四、Android 16 / 17 内核对比
+## 四、Android 16/17 对比（GKI 6.12 / 6.18）
 
-| 项目 | Android 16（GKI 6.12） | Android 17（GKI 6.18） | 本机（6.1.68） |
+| 能力 | A16（6.12） | A17（6.18） | 本机（6.1.68） |
 |---|---|---|---|
-| 16KB 页面支持 | ✅ | ✅ | ❌ 无法实现 |
-| MTE 内存标记 | ✅ | ✅ | ✅ 已有 |
-| Landlock | ✅ | ✅ | ✅ v2 补 |
-| nftables | ✅ | ✅ | ✅ v2 补 |
-| BBR | ✅ | ✅ | ✅ v2 补 |
-| 新 Binder | ✅ | ✅ | ❌ 无法回移 |
-| eBPF 新验证器 | ✅ | ✅ | ❌ 部分无法回移 |
-| MGLRU | ✅ | ✅ | ✅ 已有 |
-| DAMON | ✅ | ✅ | ✅ 已有 |
-| 新调度器 | ✅ | ✅ | ❌ 无法回移 |
+| 16KB 页面 | ✅ | ✅ | ❌ 无法回移（AOSP 16KB GKI 不覆盖 android14-6.1） |
+| MTE | ✅ | ✅ | ✅ 已有 |
+| MGLRU / DAMON | ✅ | ✅ | ✅ 已有 |
+| Landlock | ✅ | ✅ | ✅ v3.1 |
+| BPF LSM | ✅ | ✅ | ✅ v3.1 |
+| BBR / CAKE | ✅ | ✅ | ✅ v3.1 |
+| nftables | ✅ | ✅ | ❌ ABI 风险（排除） |
+| 新 Binder / sched_ext / EEVDF / mseal / mTHP | ✅ | ✅ | ❌ 无法回移 |
+| 8 大版本差距 | — | — | 6.1 → 6.12/6.18（11~17 个上游版本） |
 
-> **结论**：Android 16/17 的核心新特性大多依赖内核版本本身（6.12/6.18），无法在不破坏 ABI 的前提下回移到 6.1.68。能做的只有「配置级」功能补齐。
+## 五、灰度构建计划（避免一次全开无法定位）
 
-## 五、运行时性能调优（不需要改内核）
-
-| 调优项 | 方法 | 收益 |
+| 阶段 | 内容 | 状态 |
 |---|---|---|
-| I/O 调度器 | cmdline `elevator=bfq` 或 sysfs | 存储响应 |
-| CPU governor | schedutil（已默认） | 能效平衡 |
-| TCP 拥塞控制 | `sysctl net.ipv4.tcp_congestion_control=bbr` | 网络吞吐 |
-| 网络队列 | `tc qdisc add dev wlan0 root cake` | 降低延迟 |
-| zram 参数 | `/sys/block/zram0/*` | 内存压缩 |
-| VM 参数 | `/proc/sys/vm/*`（swappiness 等） | 内存管理 |
-| GPU 调频 | vendor 模块参数（不可改） | — |
+| v3.1 | P0 网络/文件系统 + A16 可配置项 + 安全 | 🔄 构建中 |
+| v3.2 | P1：USB（RAW_GADGET、RNDIS、USB_SERIAL、CH341/CP210X/PL2303/FTDI） | ⏳ 待 v3.1 验证 |
+| v3.3 | P2：CRYPTO SM4/SM3 CE、NHPOLY1305_NEON、CHECKPOINT_RESTORE | ⏳ 待 v3.2 验证 |
 
-## 六、验证方案
+## 六、运行时调优（无需改内核）
 
-1. 构建 v3 → 刷入 → 开机验证（boot_completed）
-2. 检查 434 个厂商模块是否全部加载
-3. 检查 GPU / 显示 / 相机 / WiFi 正常
-4. 跑一次 Droidspaces 要求检查
-5. 对比 v1/v2/v3 的实际体验（开机速度、IO、网络）
+| 项 | 命令 | 说明 |
+|---|---|---|
+| BBR | `sysctl -w net.ipv4.tcp_congestion_control=bbr` | v3.1 内置 BBR 后可启用 |
+| I/O 调度 | `echo bfq > /sys/block/sda/queue/scheduler` | 原厂已内置 BFQ |
+| CAKE | `tc qdisc replace dev wlan0 root cake bandwidth 100mbit` | v3.1 内置 CAKE |
+| zram 算法 | `echo zstd > /sys/block/zram0/comp_algorithm` | 厂商 zram.ko 支持 zstd |
+| IOMMU lazy | cmdline `iommu.strict=0` | 先实测 |
+
+## 七、验证清单
+
+1. 构建日志中检查 `MISSING:` 提示（配置是否被 kconfig 丢弃）
+2. 刷入后：`boot_completed=1`
+3. `dmesg | grep -iE "disagrees about version|Unknown symbol|module_layout"` 应为 0
+4. 434 个厂商模块全部加载
+5. GPU / 相机 / WiFi / 显示正常
+6. Droidspaces 要求检查通过
