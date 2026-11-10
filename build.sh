@@ -60,6 +60,9 @@ cat "$FRAGMENT" >> .config
 
 case "${ENHANCE:-0}" in
   net) echo "=== merging net fragment ==="; cat "$REPO_DIR/config-net.fragment" >> .config ;;
+  n1)  echo "=== merging n1 fragment ===";  cat "$REPO_DIR/config-n1.fragment" >> .config ;;
+  n2)  echo "=== merging n2 fragment ===";  cat "$REPO_DIR/config-n2.fragment" >> .config ;;
+  n3)  echo "=== merging n3 fragment ===";  cat "$REPO_DIR/config-n3.fragment" >> .config ;;
   fs)  echo "=== merging fs fragment ===";  cat "$REPO_DIR/config-fs.fragment" >> .config ;;
   sec) echo "=== merging sec fragment ==="; cat "$REPO_DIR/config-sec.fragment" >> .config ;;
   1)   echo "=== merging enhancement fragment ==="; cat "$REPO_DIR/config-enhance.fragment" >> .config ;;
@@ -84,6 +87,9 @@ make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 
 case "${ENHANCE:-0}" in
   net) ENH_FRAG="$REPO_DIR/config-net.fragment" ;;
+  n1)  ENH_FRAG="$REPO_DIR/config-n1.fragment" ;;
+  n2)  ENH_FRAG="$REPO_DIR/config-n2.fragment" ;;
+  n3)  ENH_FRAG="$REPO_DIR/config-n3.fragment" ;;
   fs)  ENH_FRAG="$REPO_DIR/config-fs.fragment" ;;
   sec) ENH_FRAG="$REPO_DIR/config-sec.fragment" ;;
   1)   ENH_FRAG="$REPO_DIR/config-enhance.fragment" ;;

@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'config-net.fragment'
-      - 'config-fs.fragment'
-      - 'config-sec.fragment'
+      - 'config-n1.fragment'
+      - 'config-n2.fragment'
+      - 'config-n3.fragment'
       - '.github/workflows/build-enhanced.yml'
 
 permissions:
@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [ net, fs, sec ]
+        variant: [ base, n1, n2, n3 ]
     steps:
       - uses: actions/checkout@v4
 
