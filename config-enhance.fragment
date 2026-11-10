@@ -1,0 +1,30 @@
+# ---------------------------------------------------------------
+# v2 增强配置（全部为 ABI 安全的选项，不改变导出结构体布局）
+# ---------------------------------------------------------------
+
+# --- 安全增强 ---
+CONFIG_SECURITY_LANDLOCK=y
+CONFIG_SECURITY_YAMA=y
+CONFIG_BPF_UNPRIV_DEFAULT_OFF=y
+CONFIG_INIT_ON_FREE_DEFAULT_ON=y
+CONFIG_DEBUG_WX=y
+
+# --- 网络：现代拥塞控制与队列 ---
+CONFIG_TCP_CONG_BBR=y
+CONFIG_NET_SCH_CAKE=y
+CONFIG_NF_TABLES=y
+CONFIG_NF_TABLES_INET=y
+CONFIG_NF_TABLES_NETDEV=y
+CONFIG_NFT_NAT=y
+CONFIG_NFT_MASQ=y
+
+# --- 内存/存储 ---
+CONFIG_MEMCG_SWAP=y
+CONFIG_ZSWAP=y
+CONFIG_ZRAM_WRITEBACK=y
+
+# --- 文件系统 ---
+CONFIG_NTFS3_FS=y
+
+# --- Droidspaces 容器补充 ---
+CONFIG_IP_SET_HASH_NET=y

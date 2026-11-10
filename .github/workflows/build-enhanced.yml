@@ -1,0 +1,52 @@
+name: build-nx721j-enhanced
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'config-enhance.fragment'
+      - '.github/workflows/build-enhanced.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev \
+            cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
+
+      - name: Install AOSP clang r487747c
+        run: |
+          mkdir -p $HOME/clang
+          curl -L --retry 3 -o clang.tar.gz \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/android-14.0.0_r1/clang-r487747c.tar.gz"
+          tar xzf clang.tar.gz -C $HOME/clang
+          $HOME/clang/bin/clang --version | head -1
+          echo "LLVM_BIN=$HOME/clang/bin" >> $GITHUB_ENV
+
+      - name: Build enhanced kernel
+        run: |
+          export PATH="$LLVM_BIN:$PATH"
+          export LLVM=1
+          export ENHANCE=1
+          bash build.sh
+
+      - name: Upload kernel Image
+        uses: actions/upload-artifact@v4
+        with:
+          name: nx721j-kernel-enhanced
+          path: out/Image
+          retention-days: 90

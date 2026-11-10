@@ -58,6 +58,11 @@ cp "$STOCK_CONFIG" .config
 echo "=== merging Droidspaces fragment ==="
 cat "$FRAGMENT" >> .config
 
+if [ "${ENHANCE:-0}" = "1" ]; then
+  echo "=== merging enhancement fragment ==="
+  cat "$REPO_DIR/config-enhance.fragment" >> .config
+fi
+
 echo "=== applying SYSVIPC kABI patch ($PATCH_VARIANT) ==="
 patch -p1 < "$PATCH"
 
