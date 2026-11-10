@@ -154,6 +154,11 @@ python3 edl.py --memory=UFS --loader=prog_ufs_firehose_sm8650_ddr.elf \
 ✅ 版本字符串与原厂完全一致
 ```
 
+## 📚 相关资料
+
+- [调研资料汇总](docs/RESEARCH.md) — Droidspaces 官方要求、kABI 机制、NetHunter 资料、QCACLD monitor 方法、实测记录
+- [疑难解答与恢复指南](docs/TROUBLESHOOTING.md) — 刷机失败恢复、EDL 回滚、monitor 模式开启、常见错误对照
+
 ## 🙏 致谢
 
 - [Droidspaces-OSS](https://github.com/ravindu644/Droidspaces-OSS) — 容器方案与 kABI 补丁
