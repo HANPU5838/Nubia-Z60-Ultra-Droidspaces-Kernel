@@ -157,7 +157,8 @@ python3 edl.py --memory=UFS --loader=prog_ufs_firehose_sm8650_ddr.elf \
 ## 📚 相关资料
 
 - [调研资料汇总](docs/RESEARCH.md) — Droidspaces 官方要求、kABI 机制、NetHunter 资料、QCACLD monitor 方法、实测记录
-- [疑难解答与恢复指南](docs/TROUBLESHOOTING.md) — 刷机失败恢复、EDL 回滚、monitor 模式开启、常见错误对照
+- [疑难解答与恢复指南](docs/TROUBLESHOOTING.md)
+- [关键实测发现](docs/FINDINGS.md) — WiFi monitor 支持、USB gadget 陷阱、ABI 禁区 — 刷机失败恢复、EDL 回滚、monitor 模式开启、常见错误对照
 
 ## 🙏 致谢
 

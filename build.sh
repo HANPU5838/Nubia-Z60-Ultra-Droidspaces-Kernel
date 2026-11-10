@@ -58,11 +58,6 @@ cp "$STOCK_CONFIG" .config
 echo "=== merging Droidspaces fragment ==="
 cat "$FRAGMENT" >> .config
 
-if [ "${ENHANCE:-0}" = "usb" ]; then
-  echo "=== merging USB (NetHunter) fragment ==="
-  cat "$REPO_DIR/config-usb.fragment" >> .config
-fi
-
 echo "=== applying SYSVIPC kABI patch ($PATCH_VARIANT) ==="
 patch -p1 < "$PATCH"
 
