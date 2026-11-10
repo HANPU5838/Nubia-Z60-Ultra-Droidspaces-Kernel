@@ -58,10 +58,12 @@ cp "$STOCK_CONFIG" .config
 echo "=== merging Droidspaces fragment ==="
 cat "$FRAGMENT" >> .config
 
-if [ "${ENHANCE:-0}" = "1" ]; then
-  echo "=== merging enhancement fragment ==="
-  cat "$REPO_DIR/config-enhance.fragment" >> .config
-fi
+case "${ENHANCE:-0}" in
+  net) echo "=== merging net fragment ==="; cat "$REPO_DIR/config-net.fragment" >> .config ;;
+  fs)  echo "=== merging fs fragment ===";  cat "$REPO_DIR/config-fs.fragment" >> .config ;;
+  sec) echo "=== merging sec fragment ==="; cat "$REPO_DIR/config-sec.fragment" >> .config ;;
+  1)   echo "=== merging enhancement fragment ==="; cat "$REPO_DIR/config-enhance.fragment" >> .config ;;
+esac
 
 echo "=== applying SYSVIPC kABI patch ($PATCH_VARIANT) ==="
 patch -p1 < "$PATCH"
@@ -80,12 +82,17 @@ sed -i "s|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=\"$REPO_DIR/
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 
-if [ "${ENHANCE:-0}" = "1" ]; then
+case "${ENHANCE:-0}" in
+  net) ENH_FRAG="$REPO_DIR/config-net.fragment" ;;
+  fs)  ENH_FRAG="$REPO_DIR/config-fs.fragment" ;;
+  sec) ENH_FRAG="$REPO_DIR/config-sec.fragment" ;;
+  1)   ENH_FRAG="$REPO_DIR/config-enhance.fragment" ;;
+  *)   ENH_FRAG="" ;;
+esac
+if [ -n "$ENH_FRAG" ]; then
   echo "=== verify enhancement options (dropped ones will be listed) ==="
-  for opt in BRIDGE_NETFILTER VXLAN GENEVE IPVLAN DEFAULT_FQ_CODEL TCP_CONG_BBR \
-             SQUASHFS ISO9660_FS UDF_FS NTFS3_FS FANOTIFY SECURITY_LANDLOCK \
-             BPF_LSM DAMON_RECLAIM READ_ONLY_THP_FOR_FS RCU_NOCB_CPU_DEFAULT_ALL; do
-    if ! grep -qE "^CONFIG_${opt}=y" .config; then echo "  MISSING: CONFIG_${opt}"; fi
+  grep -E '^CONFIG_[A-Z0-9_]+=y' "$ENH_FRAG" | sed 's/=y//' | while read -r opt; do
+    if ! grep -qE "^$opt=y" .config; then echo "  MISSING: $opt"; fi
   done
 fi
 

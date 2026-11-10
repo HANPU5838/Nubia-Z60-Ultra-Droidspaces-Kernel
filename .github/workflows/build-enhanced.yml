@@ -4,7 +4,9 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - 'config-enhance.fragment'
+      - 'config-net.fragment'
+      - 'config-fs.fragment'
+      - 'config-sec.fragment'
       - '.github/workflows/build-enhanced.yml'
 
 permissions:
@@ -14,6 +16,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [ net, fs, sec ]
     steps:
       - uses: actions/checkout@v4
 
@@ -37,16 +43,16 @@ jobs:
           $HOME/clang/bin/clang --version | head -1
           echo "LLVM_BIN=$HOME/clang/bin" >> $GITHUB_ENV
 
-      - name: Build enhanced kernel
+      - name: Build kernel (${{ matrix.variant }})
         run: |
           export PATH="$LLVM_BIN:$PATH"
           export LLVM=1
-          export ENHANCE=1
+          export ENHANCE="${{ matrix.variant }}"
           bash build.sh
 
       - name: Upload kernel Image
         uses: actions/upload-artifact@v4
         with:
-          name: nx721j-kernel-enhanced
+          name: nx721j-${{ matrix.variant }}
           path: out/Image
           retention-days: 90
