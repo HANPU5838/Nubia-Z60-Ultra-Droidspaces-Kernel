@@ -58,16 +58,6 @@ cp "$STOCK_CONFIG" .config
 echo "=== merging Droidspaces fragment ==="
 cat "$FRAGMENT" >> .config
 
-case "${ENHANCE:-0}" in
-  net) echo "=== merging net fragment ==="; cat "$REPO_DIR/config-net.fragment" >> .config ;;
-  n1)  echo "=== merging n1 fragment ===";  cat "$REPO_DIR/config-n1.fragment" >> .config ;;
-  n2)  echo "=== merging n2 fragment ===";  cat "$REPO_DIR/config-n2.fragment" >> .config ;;
-  n3)  echo "=== merging n3 fragment ===";  cat "$REPO_DIR/config-n3.fragment" >> .config ;;
-  fs)  echo "=== merging fs fragment ===";  cat "$REPO_DIR/config-fs.fragment" >> .config ;;
-  sec) echo "=== merging sec fragment ==="; cat "$REPO_DIR/config-sec.fragment" >> .config ;;
-  1)   echo "=== merging enhancement fragment ==="; cat "$REPO_DIR/config-enhance.fragment" >> .config ;;
-esac
-
 echo "=== applying SYSVIPC kABI patch ($PATCH_VARIANT) ==="
 patch -p1 < "$PATCH"
 
@@ -80,27 +70,7 @@ sed -i 's|^CONFIG_TRIM_UNUSED_KSYMS=.*|# CONFIG_TRIM_UNUSED_KSYMS is not set|' .
 sed -i 's|^CONFIG_MODULE_SIG_PROTECT=.*|# CONFIG_MODULE_SIG_PROTECT is not set|' .config
 sed -i "s|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=\"$REPO_DIR/certs/nubia-signing-key.pem\"|" .config
 
-# two passes: some options (NF_TABLES_*, NFT_*) only become visible once
-# their parent symbol is resolved in the first pass
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
-make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
-
-case "${ENHANCE:-0}" in
-  net) ENH_FRAG="$REPO_DIR/config-net.fragment" ;;
-  n1)  ENH_FRAG="$REPO_DIR/config-n1.fragment" ;;
-  n2)  ENH_FRAG="$REPO_DIR/config-n2.fragment" ;;
-  n3)  ENH_FRAG="$REPO_DIR/config-n3.fragment" ;;
-  fs)  ENH_FRAG="$REPO_DIR/config-fs.fragment" ;;
-  sec) ENH_FRAG="$REPO_DIR/config-sec.fragment" ;;
-  1)   ENH_FRAG="$REPO_DIR/config-enhance.fragment" ;;
-  *)   ENH_FRAG="" ;;
-esac
-if [ -n "$ENH_FRAG" ]; then
-  echo "=== verify enhancement options (dropped ones will be listed) ==="
-  grep -E '^CONFIG_[A-Z0-9_]+=y' "$ENH_FRAG" | sed 's/=y//' | while read -r opt; do
-    if ! grep -qE "^$opt=y" .config; then echo "  MISSING: $opt"; fi
-  done
-fi
 
 echo "=== verify required options ==="
 grep -E '^CONFIG_(SYSVIPC|IPC_NS|PID_NS|DEVTMPFS|POSIX_MQUEUE|USER_NS)=' .config || true
