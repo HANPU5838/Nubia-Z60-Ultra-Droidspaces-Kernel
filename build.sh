@@ -80,6 +80,15 @@ sed -i "s|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=\"$REPO_DIR/
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 
+if [ "${ENHANCE:-0}" = "1" ]; then
+  echo "=== verify enhancement options (dropped ones will be listed) ==="
+  for opt in BRIDGE_NETFILTER VXLAN GENEVE IPVLAN DEFAULT_FQ_CODEL TCP_CONG_BBR \
+             SQUASHFS ISO9660_FS UDF_FS NTFS3_FS FANOTIFY SECURITY_LANDLOCK \
+             BPF_LSM DAMON_RECLAIM READ_ONLY_THP_FOR_FS RCU_NOCB_CPU_DEFAULT_ALL; do
+    if ! grep -qE "^CONFIG_${opt}=y" .config; then echo "  MISSING: CONFIG_${opt}"; fi
+  done
+fi
+
 echo "=== verify required options ==="
 grep -E '^CONFIG_(SYSVIPC|IPC_NS|PID_NS|DEVTMPFS|POSIX_MQUEUE|USER_NS)=' .config || true
 grep -E '^CONFIG_LOCALVERSION=' .config
