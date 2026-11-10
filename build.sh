@@ -75,6 +75,9 @@ sed -i 's|^CONFIG_TRIM_UNUSED_KSYMS=.*|# CONFIG_TRIM_UNUSED_KSYMS is not set|' .
 sed -i 's|^CONFIG_MODULE_SIG_PROTECT=.*|# CONFIG_MODULE_SIG_PROTECT is not set|' .config
 sed -i "s|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=\"$REPO_DIR/certs/nubia-signing-key.pem\"|" .config
 
+# two passes: some options (NF_TABLES_*, NFT_*) only become visible once
+# their parent symbol is resolved in the first pass
+make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig
 
 echo "=== verify required options ==="
