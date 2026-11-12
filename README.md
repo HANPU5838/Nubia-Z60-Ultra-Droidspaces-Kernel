@@ -10,6 +10,15 @@
 
 ---
 
+## 📥 下载
+
+| 文件 | 说明 | 下载 |
+|---|---|---|
+| **nx721j-a16-droidspaces-boot.img** | 完整 boot 镜像（推荐，直接刷 boot 分区） | [最新 Release](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/latest) |
+| **Image** | 纯内核镜像（给会用工具的人） | 同上 |
+
+> 刷入前请先看 [刷入方法](#-刷入方法) 并**备份原厂 boot 分区**。
+
 ## 📌 这是什么
 
 给 **努比亚 Z60 Ultra（NX721J / 骁龙 8 Gen3 / sm8650）** 编译的 **GKI 内核**，替换手机 boot 分区里的内核。
@@ -162,6 +171,18 @@ python3 edl.py --memory=UFS --loader=prog_ufs_firehose_sm8650_ddr.elf \\
 - [关键实测发现](docs/FINDINGS.md) — WiFi monitor、USB gadget 陷阱、ABI 禁区、A16 适配记录
 - [调研资料汇总](docs/RESEARCH.md) — Droidspaces 官方要求、kABI 机制、NetHunter 资料
 - [疑难解答与恢复指南](docs/TROUBLESHOOTING.md) — 刷机失败恢复、EDL 回滚、monitor 模式开启
+
+## 👤 联系方式
+
+| 平台 | 账号 | 名称 |
+|---|---|---|
+| 🌐 网站 | [hanpuhan.cn](https://hanpuhan.cn) | 清崖文存 |
+| 📧 邮箱 | [640615397@qq.com](mailto:640615397@qq.com) | — |
+| 📱 快手 | QQ640615397 | 涵清 |
+| 🎵 抖音 | qingyawencun | 清崖文存 |
+| 💬 QQ 群 | 959116552 | 清崖文存 |
+
+> 联系方式原文件：[个人信息.txt](个人信息.txt)
 
 ## 🙏 致谢
 
