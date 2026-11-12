@@ -2,11 +2,13 @@
 #
 # Build a Droidspaces-capable GKI kernel for the nubia NX721J (Z60 Ultra, sm8650).
 #
+# Target system: NebulaOS 2.0.8 (Android 16), kernel 6.1.145-android14-11-g11c274d0441f-ab14259673
+#
 # Recipe:
-#   * ACK android14-6.1 at the exact commit the stock kernel was built from
-#   * the phone's own /proc/config.gz as the base config
-#   * Droidspaces options + the official SYSVIPC kABI patch (3_4_5 variant)
-#   * vendor module-signing public cert embedded (extracted from stock kernel)
+#   * ACK android14-6.1 at the exact commit the vendor kernel was built from
+#   * the device's own /proc/config.gz as the base config
+#   * Droidspaces options + a rebased SYSVIPC kABI patch (ABI padding in struct task_struct)
+#   * vendor module-signing public cert embedded (extracted from the NebulaOS boot image)
 #   * MODULE_SIG_PROTECT disabled, TRIM_UNUSED_KSYMS off
 #   * exact stock version string, AOSP clang r487747c
 #
@@ -17,12 +19,12 @@ set -e
 
 WORK=${WORK:-$PWD/work}
 OUT=${OUT:-$PWD/out}
-ACK_COMMIT=716498f88d0f
+ACK_COMMIT=11c274d0441f
+KVER_STRING="-android14-11-g11c274d0441f-ab14259673"
 REPO_DIR=$(cd "$(dirname "$0")" && pwd)
 STOCK_CONFIG="$REPO_DIR/nx721j-stock.config"
 FRAGMENT="$REPO_DIR/config.fragment"
-PATCH_VARIANT=${PATCH_VARIANT:-3_4_5}
-PATCH="$REPO_DIR/patches/001.GKI-below-6.12-fix_sysvipc_kabi_${PATCH_VARIANT}.patch"
+PATCH="$REPO_DIR/patches/001.GKI-6.1.145-fix_sysvipc_kabi.patch"
 JOBS=${JOBS:-$(nproc)}
 export ARCH=arm64
 export LLVM=1
@@ -53,15 +55,15 @@ cd "$WORK/ack"
 echo -n "" > .scmversion
 
 # ---------------------------------------------------------------- config
-echo "=== base config = phone stock config ==="
+echo "=== base config = phone stock config (NebulaOS 2.0.8 / Android 16) ==="
 cp "$STOCK_CONFIG" .config
 echo "=== merging Droidspaces fragment ==="
 cat "$FRAGMENT" >> .config
 
-echo "=== applying SYSVIPC kABI patch ($PATCH_VARIANT) ==="
+echo "=== applying SYSVIPC kABI patch (6.1.145) ==="
 patch -p1 < "$PATCH"
 
-sed -i 's|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION="-android14-11-g716498f88d0f-ab11695701"|' .config
+sed -i "s|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"$KVER_STRING\"|" .config
 sed -i 's|^CONFIG_LOCALVERSION_AUTO=.*|# CONFIG_LOCALVERSION_AUTO is not set|' .config
 sed -i 's|^CONFIG_TRIM_UNUSED_KSYMS=.*|# CONFIG_TRIM_UNUSED_KSYMS is not set|' .config
 

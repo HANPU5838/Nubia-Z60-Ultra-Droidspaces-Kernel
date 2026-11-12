@@ -1,7 +1,7 @@
-# Droidspaces options for NX721J (nubia Z60 Ultra, sm8650, ACK android14-6.1 @ 716498f88d0f)
-# Base: the device's own /proc/config.gz (MyOS 14.5.6MR2)
+# Droidspaces options for NX721J (nubia Z60 Ultra, sm8650, ACK android14-6.1 @ 11c274d0441f / 6.1.145)
+# Base: the device's own /proc/config.gz (NebulaOS 2.0.8 / Android 16)
 #
-# ABI-safe ONLY together with patches/001.GKI-below-6.12-fix_sysvipc_kabi_6_7_8.patch
+# ABI-safe ONLY together with patches/001.GKI-6.1.145-fix_sysvipc_kabi.patch
 # Do NOT add CONFIG_CFS_BANDWIDTH / CONFIG_CGROUP_PIDS (they break the GKI kABI).
 
 # IPC (needs the kABI patch)
