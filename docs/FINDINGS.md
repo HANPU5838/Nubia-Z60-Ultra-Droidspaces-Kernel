@@ -1,5 +1,46 @@
-# 🔬 关键实测发现（2026-11-10）
+# 🔬 关键实测发现
 
+## 零、Android 16（星云OS 2.0.8 / 6.1.145）适配记录（2026-11-12）
+
+目标系统：`NebulaAIOS2.0.8_NX721J`，内核 `6.1.145-android14-11-g11c274d0441f-ab14259673`。
+
+### 1. 原厂内核缺少 Droidspaces 必需项
+
+| 配置 | 原厂值 | 本内核 |
+|---|---|---|
+| `CONFIG_SYSVIPC` | ❌ not set | ✅ y |
+| `CONFIG_POSIX_MQUEUE` | ❌ not set | ✅ y |
+| `CONFIG_IPC_NS` / `PID_NS` / `USER_NS` | ❌ not set | ✅ y |
+| `CONFIG_DEVTMPFS` | ❌ not set | ✅ y |
+| `CONFIG_MACVLAN` | ❌ not set | ✅ y |
+
+### 2. kABI 补丁需要重制（6.1.145）
+
+- 6.1.68 用的 `3_4_5` 变体只部分适用：hunk #2 失败。
+- 原因：6.1.145 的 `struct task_struct` KABI 槽位 **1/2 已被占用**：
+  - `ANDROID_KABI_USE(1, unsigned int saved_state)`
+  - `ANDROID_KABI_USE(2, struct task_dma_buf_info *dmabuf_info)`
+- 重制方案：`sysv_sem` 放槽位 3，`sysv_shm`（16 字节）用 `_ANDROID_KABI_REPLACE(ANDROID_KABI_RESERVE(4); ANDROID_KABI_RESERVE(5), ...)` 合并槽位 4+5。
+- 补丁位置：`patches/001.GKI-6.1.145-fix_sysvipc_kabi.patch`。
+
+### 3. 证书提取必须以完整 X.509 提取
+
+- boot.img 中完整证书：偏移 **33299712**，长度 **1357** 字节（头部 `30 82 05 49 30 82 03 31`）。
+- 若只取内层 `tbsCertificate`（偏移 33299716，817 字节，头部 `30 82 03 31`），编译时 openssl 报错：
+  `SSL error:...wrong tag` / `nested asn1 error` → `certs/x509_certificate_list` 失败。
+- 完整证书结构：SEQUENCE{ tbsCertificate, signatureAlgorithm, signature }。
+
+### 4. 结果（首次刷入即成功）
+
+```
+✅ 开机正常
+✅ 429 个厂商模块全部加载
+✅ CRC / Unknown symbol 错误 0
+✅ WiFi（29 个相关模块）/ GPU / 相机正常
+✅ Magisk 31.1 root 保留
+```
+
+---
 ## 一、内置 WiFi 支持 monitor 模式（已验证）
 
 运行中的 v1 内核即可切换 monitor 模式，**无需任何内核改动**：
