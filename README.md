@@ -12,11 +12,23 @@
 
 ## 📥 下载
 
-| 文件 | 说明 | 下载 |
-|---|---|---|
-| **nx721j-a16-droidspaces-boot.img** | 完整 boot 镜像（推荐，直接刷 boot 分区） | [最新 Release](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/latest) |
-| **Image** | 纯内核镜像（给会用工具的人） | 同上 |
+### 版本对照（两个版本内核不通用，请按系统选择）
 
+| 版本 | 适用系统 | 内核基线 | 厂商模块 | 下载 |
+|---|---|---|---|---|
+| **v2.0.0（最新）** | 星云OS 2.0.8（**Android 16**） | 6.1.145 | 429 个 | [Release v2.0.0](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/tag/v2.0.0) |
+| v1.0（旧版） | MyOS 14.5.6MR2（**Android 14**） | 6.1.68 | 434 个 | [Release v1.0](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/tag/v1.0) |
+
+### 文件说明
+
+| 文件 | 适用系统 | 说明 |
+|---|---|---|
+| `nx721j-a16-droidspaces-boot.img` | Android 16 | 完整 boot 镜像（推荐，直接刷 boot 分区） |
+| `nx721j-a16-droidspaces-Image.img` | Android 16 | 纯内核镜像（给会用工具的人） |
+| `nx721j-final-kernel-boot.img` | Android 14 | 完整 boot 镜像（旧版） |
+| `nx721j-final-kernel-Image.img` | Android 14 | 纯内核镜像（旧版） |
+
+> ⚠️ **A14 内核不能用于 Android 16，反之亦然**（内核版本与厂商模块必须匹配）。
 > 刷入前请先看 [刷入方法](#-刷入方法) 并**备份原厂 boot 分区**。
 
 ## 📌 这是什么
@@ -181,8 +193,6 @@ python3 edl.py --memory=UFS --loader=prog_ufs_firehose_sm8650_ddr.elf \\
 | 📱 快手 | QQ640615397 | 涵清 |
 | 🎵 抖音 | qingyawencun | 清崖文存 |
 | 💬 QQ 群 | 959116552 | 清崖文存 |
-
-> 联系方式原文件：[个人信息.txt](个人信息.txt)
 
 ## 🙏 致谢
 
