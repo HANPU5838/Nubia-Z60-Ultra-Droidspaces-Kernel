@@ -8,6 +8,17 @@
 ![kernel](https://img.shields.io/badge/kernel-6.1.145-orange?style=flat)
 ![android](https://img.shields.io/badge/android-16-brightgreen?style=flat)
 
+## 联系方式
+
+| 平台 | 账号 | 名称 |
+| --- | --- | --- |
+| 🌐 网站 | [hanpuhan.cn](https://hanpuhan.cn) | 清崖文存 |
+| ✉️ 邮箱 | [640615397@qq.com](mailto:640615397@qq.com) | — |
+| 📱 快手 | QQ640615397 | 涵清 |
+| 💬 QQ 群 | 9591166552 | 清崖文存 |
+
+---
+
 ---
 
 ## 📥 下载
