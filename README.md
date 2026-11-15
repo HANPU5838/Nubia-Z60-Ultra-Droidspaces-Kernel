@@ -197,16 +197,6 @@ python3 edl.py --memory=UFS --loader=prog_ufs_firehose_sm8650_ddr.elf \\
 - [调研资料汇总](docs/RESEARCH.md) — Droidspaces 官方要求、kABI 机制、NetHunter 资料
 - [疑难解答与恢复指南](docs/TROUBLESHOOTING.md) — 刷机失败恢复、EDL 回滚、monitor 模式开启
 
-## 👤 联系方式
-
-| 平台 | 账号 | 名称 |
-|---|---|---|
-| 🌐 网站 | [hanpuhan.cn](https://hanpuhan.cn) | 清崖文存 |
-| 📧 邮箱 | [640615397@qq.com](mailto:640615397@qq.com) | — |
-| 📱 快手 | QQ640615397 | 涵清 |
-| 🎵 抖音 | qingyawencun | 清崖文存 |
-| 💬 QQ 群 | 959116552 | 清崖文存 |
-
 ## 🙏 致谢
 
 - [Droidspaces-OSS](https://github.com/ravindu644/Droidspaces-OSS) — 容器方案与 kABI 补丁
