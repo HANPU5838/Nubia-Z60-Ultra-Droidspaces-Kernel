@@ -1,0 +1,97 @@
+# ============================================================================
+# NX721J (Z60 Ultra / sm8650) — Android 14 / MyOS 14.5.6MR2
+# v1.1 "Perfect" fragment — base: legacy/nx721j-a14-stock.config
+# ACK android14-6.1 @ 716498f88d0f — version -android14-11-g716498f88d0f-ab11695701
+#
+# ABI-SAFE RULES:
+#   * NEVER enable CONFIG_CFS_BANDWIDTH / CONFIG_CGROUP_PIDS
+#     (they change exported symbol CRCs -> vendor modules refuse to load -> bootloop)
+#   * Do NOT touch CONFIG_LSM (SELinux must stay first-class)
+#   * Keep the exact stock version string (vendor modules check vermagic)
+# ============================================================================
+
+# ---------- v1.0 Droidspaces core (must keep) ----------
+CONFIG_SYSVIPC=y
+CONFIG_POSIX_MQUEUE=y
+CONFIG_IPC_NS=y
+CONFIG_PID_NS=y
+CONFIG_USER_NS=y
+CONFIG_DEVTMPFS=y
+CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y
+CONFIG_IP6_NF_NAT=y
+CONFIG_IP6_NF_TARGET_MASQUERADE=y
+CONFIG_MACVLAN=y
+CONFIG_NETFILTER_XT_TARGET_REJECT=y
+CONFIG_NETFILTER_XT_TARGET_LOG=y
+CONFIG_NETFILTER_XT_MATCH_RECENT=y
+CONFIG_IP_SET=y
+CONFIG_IP_SET_HASH_IP=y
+CONFIG_IP_SET_HASH_NET=y
+CONFIG_NETFILTER_XT_SET=y
+CONFIG_TMPFS_POSIX_ACL=y
+CONFIG_TMPFS_XATTR=y
+
+# ---------- v1.1 container: nftables + bridge conntrack ----------
+CONFIG_NF_TABLES=y
+CONFIG_NF_TABLES_INET=y
+CONFIG_NF_TABLES_IPV4=y
+CONFIG_NF_TABLES_IPV6=y
+CONFIG_NF_TABLES_NETDEV=y
+CONFIG_NFT_NAT=y
+CONFIG_NFT_MASQ=y
+CONFIG_NFT_REDIR=y
+CONFIG_NFT_CT=y
+CONFIG_NFT_LOG=y
+CONFIG_NFT_REJECT=y
+CONFIG_NF_CONNTRACK_BRIDGE=y
+CONFIG_BRIDGE_NETFILTER=y
+CONFIG_NETFILTER_XT_MATCH_PHYSDEV=y
+
+# ---------- v1.1 container: cgroup / diag / checkpoint ----------
+CONFIG_CGROUP_DEVICE=y
+CONFIG_CGROUP_NET_CLASSID=y
+CONFIG_CHECKPOINT_RESTORE=y
+CONFIG_PACKET_DIAG=y
+CONFIG_UNIX_DIAG=y
+CONFIG_NETLINK_DIAG=y
+
+# ---------- v1.1 filesystems (container shares / NFS) ----------
+CONFIG_NFS_FS=y
+CONFIG_NFS_V4=y
+CONFIG_NFS_V4_1=y
+CONFIG_NET_9P=y
+CONFIG_NET_9P_FD=y
+CONFIG_9P_FS=y
+CONFIG_BTRFS_FS=y
+CONFIG_BTRFS_FS_POSIX_ACL=y
+
+# ---------- v1.1 performance ----------
+CONFIG_TCP_CONG_BBR=y
+CONFIG_NET_SCH_CAKE=y
+CONFIG_ZSWAP=y
+CONFIG_ZBUD=y
+CONFIG_ZSWAP_DEFAULT_ON=n
+
+# ---------- v1.1 security (yama/apparmor already in CONFIG_LSM) ----------
+CONFIG_SECURITY_YAMA=y
+CONFIG_SECURITY_APPARMOR=y
+CONFIG_FANOTIFY=y
+CONFIG_FANOTIFY_ACCESS_PERMISSIONS=y
+CONFIG_PERSISTENT_KEYRINGS=y
+
+# ---------- v1.1 USB gadget (RNDIS missing in stock) ----------
+CONFIG_USB_CONFIGFS_RNDIS=y
+
+# ---------- v1.1 USB serial / BT / net adapters ----------
+CONFIG_USB_ACM=y
+CONFIG_USB_SERIAL=y
+CONFIG_USB_SERIAL_CH341=y
+CONFIG_USB_SERIAL_PL2303=y
+CONFIG_USB_SERIAL_CP210X=y
+CONFIG_USB_SERIAL_FTDI_SIO=y
+CONFIG_BT_HCIBTUSB=y
+CONFIG_USB_NET_RNDIS_HOST=y
+CONFIG_USB_NET_CDCETHER=y
+CONFIG_USB_USBNET=y
+CONFIG_PPP=y
+CONFIG_PPP_ASYNC=y

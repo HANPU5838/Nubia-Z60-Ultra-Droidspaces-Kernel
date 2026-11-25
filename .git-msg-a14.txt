@@ -1,0 +1,9 @@
+feat(a14): v1.1 perfect kernel for Android 14 (NX721J)
+
+- ACK android14-6.1 @ 716498f88d0f, exact stock version string
+- base: legacy/nx721j-a14-stock.config + legacy SYSVIPC kABI patch
+- v1.1: nftables, CGROUP_DEVICE, CHECKPOINT_RESTORE, diag sockets,
+  NFS/9P/BTRFS, BBR/CAKE/ZSWAP, YAMA/AppArmor/FANOTIFY, RNDIS gadget,
+  USB serial/CDC/usbnet host, BT USB
+- keeps vendor module signing cert, MODULE_SIG_PROTECT off
+- never enables CFS_BANDWIDTH/CGROUP_PIDS (kABI break)
