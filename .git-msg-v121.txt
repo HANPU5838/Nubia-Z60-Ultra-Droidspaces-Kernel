@@ -1,0 +1,8 @@
+fix(a14): build modules to produce Module.symvers for the CRC guard
+
+The v1.2.0 run failed at `cp Module.symvers`: `make Image` does not run
+modpost, so the per-symbol CRC table is never generated. Build the
+module target as well; modpost then produces Module.symvers with the
+__crc_* values the vendor modules are matched against.
+
+No kernel code change; Image is unchanged.

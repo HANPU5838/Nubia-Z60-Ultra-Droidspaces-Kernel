@@ -110,6 +110,12 @@ grep -E '^CONFIG_(NF_TABLES|CGROUP_DEVICE|CHECKPOINT_RESTORE|TCP_CONG_BBR|ZSWAP|
 echo "=== building Image ==="
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= Image
 
+# Module.symvers (the per-symbol CRC table) is produced by the modpost stage,
+# which only runs when the module target is built. Build the modules too so the
+# CRC guard has real data to compare.
+echo "=== building modules (produces Module.symvers for the CRC guard) ==="
+make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= modules
+
 cp arch/arm64/boot/Image "$OUT/Image"
 cp Module.symvers "$OUT/Module.symvers"
 echo "=== done: $OUT/Image ($(stat -c%s "$OUT/Image") bytes) ==="
