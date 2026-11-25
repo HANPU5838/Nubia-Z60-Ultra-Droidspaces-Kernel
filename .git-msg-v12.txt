@@ -1,0 +1,27 @@
+feat(a14): v1.2 CRC-safe kernel + CI CRC guard
+
+Root cause of the v1.1 bootloop: the candidate changed exported symbol
+CRCs (cgroup-controller options CGROUP_DEVICE / CGROUP_NET_CLASSID, plus
+LSM additions AppArmor / YAMA), so the 434 vendor modules refused to load
+and Android bootlooped.
+
+v1.2 keeps only "pure new code" options that add new symbols without
+changing existing structs/prototypes:
+- nftables + bridge conntrack + physdev
+- socket diag (PACKET/UNIX/NETLINK)
+- NFS / 9P / BTRFS
+- BBR / CAKE / ZSWAP
+- USB gadget RNDIS
+- USB serial (CH341/PL2303/CP210x/FTDI), CDC, usbnet host, BT-USB
+
+Removed (forbidden): CGROUP_DEVICE, CGROUP_NET_CLASSID, AppArmor, YAMA,
+FANOTIFY, PERSISTENT_KEYRINGS, CHECKPOINT_RESTORE.
+
+New CI workflow build-a14-v12.yml:
+- job baseline: builds the exact v1.0 config, uploads Module.symvers
+- job candidate: builds the v1.2 fragment, uploads Image + Module.symvers
+- job crc-guard: scripts/crc_guard.py compares every exported symbol CRC
+  and FAILS the workflow if any symbol is removed or its CRC changed.
+
+Flash procedure (v1.2): trial-boot with fastboot boot first, never
+dd straight into boot_a.

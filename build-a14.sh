@@ -10,9 +10,11 @@
 #   * the device's own stock /proc/config.gz (legacy/nx721j-a14-stock.config)
 #   * v1.0 Droidspaces options (SYSVIPC, POSIX_MQUEUE, namespaces, DEVTMPFS, MACVLAN,
 #     netfilter extras) + legacy SYSVIPC kABI patch
-#   * v1.1 additions: nftables, CGROUP_DEVICE, CHECKPOINT_RESTORE, diag sockets,
-#     NFS/9P/BTRFS, BBR, CAKE, ZSWAP, YAMA, AppArmor, FANOTIFY, RNDIS gadget,
-#     USB serial / CDC / BT-USB / usbnet host drivers
+#   * v1.2 CRC-SAFE additions only (pure new code, no core-struct changes):
+#     nftables, socket diag, NFS/9P/BTRFS, BBR/CAKE/ZSWAP, RNDIS gadget,
+#     USB serial / CDC / usbnet host / BT-USB drivers
+#   * VARIANT=baseline -> build the exact v1.0 config (CRC reference)
+#   * VARIANT=v12      -> build the candidate fragment (default)
 #   * vendor module-signing public cert embedded (legacy/certs/nubia-signing-key-a14.pem)
 #   * MODULE_SIG_PROTECT disabled, TRIM_UNUSED_KSYMS off
 #   * exact stock version string, AOSP clang r487747c
@@ -22,13 +24,18 @@
 #
 set -e
 
-WORK=${WORK:-$PWD/work-a14}
-OUT=${OUT:-$PWD/out-a14}
+VARIANT=${VARIANT:-v12}
+WORK=${WORK:-$PWD/work-a14-$VARIANT}
+OUT=${OUT:-$PWD/out-a14-$VARIANT}
 ACK_COMMIT=716498f88d0f
 KVER_STRING="-android14-11-g716498f88d0f-ab11695701"
 REPO_DIR=$(cd "$(dirname "$0")" && pwd)
 STOCK_CONFIG="$REPO_DIR/legacy/nx721j-a14-stock.config"
-FRAGMENT="$REPO_DIR/config.fragment.a14"
+if [ "$VARIANT" = "baseline" ]; then
+  FRAGMENT="$REPO_DIR/config.fragment"      # exact v1.0 config (CRC reference)
+else
+  FRAGMENT="$REPO_DIR/config.fragment.a14"  # v1.2 candidate
+fi
 PATCH="$REPO_DIR/legacy/001.GKI-below-6.12-fix_sysvipc_kabi_3_4_5.patch"
 CERT="$REPO_DIR/legacy/certs/nubia-signing-key-a14.pem"
 JOBS=${JOBS:-$(nproc)}
@@ -104,6 +111,8 @@ echo "=== building Image ==="
 make -j"$JOBS" ARCH=arm64 LLVM=1 LOCALVERSION= Image
 
 cp arch/arm64/boot/Image "$OUT/Image"
-echo "=== done: $OUT/Image ==="
+cp Module.symvers "$OUT/Module.symvers"
+echo "=== done: $OUT/Image ($(stat -c%s "$OUT/Image") bytes) ==="
+echo "=== symvers: $OUT/Module.symvers ($(wc -l < "$OUT/Module.symvers") exported symbols) ==="
 ls -la "$OUT/Image"
 strings "$OUT/Image" | grep -m1 'SMP preempt mod_unload'

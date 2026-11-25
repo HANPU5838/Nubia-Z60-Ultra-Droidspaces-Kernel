@@ -1,13 +1,22 @@
 # ============================================================================
 # NX721J (Z60 Ultra / sm8650) — Android 14 / MyOS 14.5.6MR2
-# v1.1 "Perfect" fragment — base: legacy/nx721j-a14-stock.config
+# v1.2 "CRC-SAFE" fragment — base: legacy/nx721j-a14-stock.config
 # ACK android14-6.1 @ 716498f88d0f — version -android14-11-g716498f88d0f-ab11695701
 #
-# ABI-SAFE RULES:
-#   * NEVER enable CONFIG_CFS_BANDWIDTH / CONFIG_CGROUP_PIDS
-#     (they change exported symbol CRCs -> vendor modules refuse to load -> bootloop)
-#   * Do NOT touch CONFIG_LSM (SELinux must stay first-class)
-#   * Keep the exact stock version string (vendor modules check vermagic)
+# HARD RULES (learned the hard way, 2026-11-26 bootloop):
+#   * The vendor's 434 closed-source modules match the kernel by
+#     vermagic AND per-symbol CRCs. Anything that changes an existing
+#     exported symbol's CRC => modules refuse to load => bootloop.
+#   * FORBIDDEN forever: CONFIG_CFS_BANDWIDTH, CONFIG_CGROUP_PIDS,
+#     CONFIG_CGROUP_DEVICE, CONFIG_CGROUP_NET_CLASSID and any other
+#     cgroup-controller option.
+#   * FORBIDDEN for this kernel: CONFIG_SECURITY_APPARMOR,
+#     CONFIG_SECURITY_YAMA (LSM hook list changes), CONFIG_FANOTIFY,
+#     CONFIG_PERSISTENT_KEYRINGS, CONFIG_CHECKPOINT_RESTORE.
+#   * Do NOT touch CONFIG_LSM. Keep the exact stock version string.
+#   * Only "pure new code" options are allowed here: new drivers,
+#     filesystems, netfilter modules, congestion control, compressors.
+#     The CI CRC guard (scripts/crc_guard.py) must report 0 changes.
 # ============================================================================
 
 # ---------- v1.0 Droidspaces core (must keep) ----------
@@ -31,7 +40,7 @@ CONFIG_NETFILTER_XT_SET=y
 CONFIG_TMPFS_POSIX_ACL=y
 CONFIG_TMPFS_XATTR=y
 
-# ---------- v1.1 container: nftables + bridge conntrack ----------
+# ---------- v1.2: nftables (pure new code) ----------
 CONFIG_NF_TABLES=y
 CONFIG_NF_TABLES_INET=y
 CONFIG_NF_TABLES_IPV4=y
@@ -47,15 +56,12 @@ CONFIG_NF_CONNTRACK_BRIDGE=y
 CONFIG_BRIDGE_NETFILTER=y
 CONFIG_NETFILTER_XT_MATCH_PHYSDEV=y
 
-# ---------- v1.1 container: cgroup / diag / checkpoint ----------
-CONFIG_CGROUP_DEVICE=y
-CONFIG_CGROUP_NET_CLASSID=y
-CONFIG_CHECKPOINT_RESTORE=y
+# ---------- v1.2: socket diagnostics (pure new code) ----------
 CONFIG_PACKET_DIAG=y
 CONFIG_UNIX_DIAG=y
 CONFIG_NETLINK_DIAG=y
 
-# ---------- v1.1 filesystems (container shares / NFS) ----------
+# ---------- v1.2: filesystems (pure new code) ----------
 CONFIG_NFS_FS=y
 CONFIG_NFS_V4=y
 CONFIG_NFS_V4_1=y
@@ -65,24 +71,17 @@ CONFIG_9P_FS=y
 CONFIG_BTRFS_FS=y
 CONFIG_BTRFS_FS_POSIX_ACL=y
 
-# ---------- v1.1 performance ----------
+# ---------- v1.2: performance (pure new code) ----------
 CONFIG_TCP_CONG_BBR=y
 CONFIG_NET_SCH_CAKE=y
 CONFIG_ZSWAP=y
 CONFIG_ZBUD=y
 CONFIG_ZSWAP_DEFAULT_ON=n
 
-# ---------- v1.1 security (yama/apparmor already in CONFIG_LSM) ----------
-CONFIG_SECURITY_YAMA=y
-CONFIG_SECURITY_APPARMOR=y
-CONFIG_FANOTIFY=y
-CONFIG_FANOTIFY_ACCESS_PERMISSIONS=y
-CONFIG_PERSISTENT_KEYRINGS=y
-
-# ---------- v1.1 USB gadget (RNDIS missing in stock) ----------
+# ---------- v1.2: USB gadget RNDIS (stock lacks it; pure new function) ----------
 CONFIG_USB_CONFIGFS_RNDIS=y
 
-# ---------- v1.1 USB serial / BT / net adapters ----------
+# ---------- v1.2: USB serial / CDC / usbnet host / BT USB (pure new drivers) ----------
 CONFIG_USB_ACM=y
 CONFIG_USB_SERIAL=y
 CONFIG_USB_SERIAL_CH341=y
@@ -92,6 +91,6 @@ CONFIG_USB_SERIAL_FTDI_SIO=y
 CONFIG_BT_HCIBTUSB=y
 CONFIG_USB_NET_RNDIS_HOST=y
 CONFIG_USB_NET_CDCETHER=y
-CONFIG_USB_USBNET=y
+CONFIG_USBNET=y
 CONFIG_PPP=y
 CONFIG_PPP_ASYNC=y
