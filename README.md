@@ -27,8 +27,9 @@
 
 | 版本 | 适用系统 | 内核基线 | 厂商模块 | 下载 |
 |---|---|---|---|---|
-| **v2.0.0（最新）** | 星云OS 2.0.8（**Android 16**） | 6.1.145 | 429 个 | [Release v2.0.0](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/tag/v2.0.0) |
-| v1.0（旧版） | MyOS 14.5.6MR2（**Android 14**） | 6.1.68 | 434 个 | [Release v1.0](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/tag/v1.0) |
+| **v2.0.0（Android 16 最新）** | 星云OS 2.0.8（**Android 16**） | 6.1.145 | 429 个 | [Release v2.0.0](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/tag/v2.0.0) |
+| **v1.3.0（Android 14 最新）** | MyOS 14.5.6MR2（**Android 14**） | 6.1.68 | 434 个 | [Release v1.3.0](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/tag/v1.3.0) |
+| v1.0（旧版，已被 v1.3.0 取代） | MyOS 14.5.6MR2（**Android 14**） | 6.1.68 | 434 个 | [Release v1.0](https://github.com/HANPU5838/Nubia-Z60-Ultra-Droidspaces-Kernel/releases/tag/v1.0) |
 
 ### 文件说明
 
@@ -36,8 +37,10 @@
 |---|---|---|
 | `nx721j-a16-droidspaces-boot.img` | Android 16 | 完整 boot 镜像（推荐，直接刷 boot 分区） |
 | `nx721j-a16-droidspaces-Image.img` | Android 16 | 纯内核镜像（给会用工具的人） |
-| `nx721j-final-kernel-boot.img` | Android 14 | 完整 boot 镜像（旧版） |
-| `nx721j-final-kernel-Image.img` | Android 14 | 纯内核镜像（旧版） |
+| `nx721j-a14-v1.3-boot.img` | Android 14 | 完整 boot 镜像（**v1.3.0，推荐**） |
+| `nx721j-a14-v1.3-Image.img` | Android 14 | 纯内核镜像（v1.3.0） |
+| `nx721j-final-kernel-boot.img` | Android 14 | 完整 boot 镜像（旧版 v1.0） |
+| `nx721j-final-kernel-Image.img` | Android 14 | 纯内核镜像（旧版 v1.0） |
 
 > ⚠️ **A14 内核不能用于 Android 16，反之亦然**（内核版本与厂商模块必须匹配）。
 > 刷入前请先看 [刷入方法](#-刷入方法) 并**备份原厂 boot 分区**。
@@ -67,7 +70,9 @@
 
 > ⚠️ 由于保持原厂 kABI 与版本字符串，任何基于 **同一内核基线（6.1.145-ab14259673）** 的 NX721J 固件都能直接使用。换其他内核基线的固件需重新适配（见 [legacy/](legacy/) 中的 Android 14 配置）。
 
-> 📌 **旧版内核**：v1.0（内核 6.1.68）适用于 **Android 14 / MyOS 14.5.6MR2**，下载见上方[版本对照](#-下载)；其构建配置归档在 [legacy/](legacy/)。
+> 📌 **Android 14 用户**：请使用 **v1.3.0**（内核 6.1.68）。相比 v1.0 新增 NFS/9P/BTRFS、BBR/CAKE、socket 诊断、USB 串口全家桶（CH341/PL2303/CP210x/FTDI）、CDC 以太网、BT-USB、PPP；构建配置见 [config.fragment.v13](config.fragment.v13) 与 [build-a14.sh](build-a14.sh)。
+>
+> 每一版发布前都会跑四道硬门禁：版本串一致、厂商 3415 个符号 CRC 零不匹配、内核与厂商模块零重复符号、真机验证（WiFi/GPU/相机/BBR 等）。nftables、ZSWAP、内置 RNDIS 因会破坏厂商模块 ABI/符号而**明确排除**。
 
 ## ✅ 支持的硬件 / 系统功能
 
