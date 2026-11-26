@@ -31,7 +31,9 @@ ACK_COMMIT=716498f88d0f
 KVER_STRING="-android14-11-g716498f88d0f-ab11695701"
 REPO_DIR=$(cd "$(dirname "$0")" && pwd)
 STOCK_CONFIG="$REPO_DIR/legacy/nx721j-a14-stock.config"
-if [ "$VARIANT" = "baseline" ]; then
+if [ -n "${FRAGMENT_FILE:-}" ]; then
+  FRAGMENT="$REPO_DIR/${FRAGMENT_FILE}"
+elif [ "$VARIANT" = "baseline" ]; then
   FRAGMENT="$REPO_DIR/config.fragment"      # exact v1.0 config (CRC reference)
 else
   FRAGMENT="$REPO_DIR/config.fragment.a14"  # v1.2 candidate
