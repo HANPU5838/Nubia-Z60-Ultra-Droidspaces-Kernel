@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    tags: [ 'v*' ]
+    tags: [ 'v2*' ]   # A16 releases only; A14 tags use build-a14-*.yml
 
 permissions:
   contents: write

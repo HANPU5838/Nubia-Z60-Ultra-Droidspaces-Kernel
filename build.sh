@@ -54,6 +54,19 @@ cd "$WORK/ack"
 # keep the exact stock version string: no '+' suffix from setlocalversion
 echo -n "" > .scmversion
 
+# ---------------------------------------------------------------- host-tool compat
+# ubuntu-24.04 runners ship glibc >= 2.38, whose string.h is const-correct for
+# strchr(). The 6.1.x copy of tools/lib/bpf trips -Werror with clang 17.
+# Host helper only (resolve_btfids); the kernel Image is unaffected.
+if grep -q "next_path = strchr(s, ':');" tools/lib/bpf/libbpf.c 2>/dev/null; then
+  sed -i "s|next_path = strchr(s, ':');|next_path = (char *)strchr(s, ':');|" tools/lib/bpf/libbpf.c
+  echo "=== patched libbpf strchr const-cast ==="
+fi
+if grep -q 'override CFLAGS += -Werror -Wall' tools/lib/bpf/Makefile 2>/dev/null; then
+  sed -i 's|override CFLAGS += -Werror -Wall|override CFLAGS += -Wall|' tools/lib/bpf/Makefile
+  echo "=== relaxed -Werror for host libbpf build ==="
+fi
+
 # ---------------------------------------------------------------- config
 echo "=== base config = phone stock config (NebulaOS 2.0.8 / Android 16) ==="
 cp "$STOCK_CONFIG" .config
