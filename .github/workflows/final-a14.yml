@@ -34,6 +34,9 @@ jobs:
       - name: Vendor CRC check (hard gate)
         run: |
           python3 scripts/vendor_crc_check.py out-a14-v13/Module.symvers
+      - name: Duplicate-symbol check (hard gate)
+        run: |
+          python3 scripts/dup_check.py out-a14-v13/Module.symvers
       - name: Upload Image + symvers
         uses: actions/upload-artifact@v4
         with:

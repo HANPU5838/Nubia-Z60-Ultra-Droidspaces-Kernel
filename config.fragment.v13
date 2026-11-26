@@ -18,11 +18,7 @@ CONFIG_NETFILTER_XT_SET=y
 CONFIG_TMPFS_POSIX_ACL=y
 CONFIG_TMPFS_XATTR=y
 
-# ---------- v1.3: only ABI-verified-safe groups ----------
-# Verified against the 270 vendor modules' __versions CRC table:
-#   g2 diag: PASS, g3 nfs/9p: PASS, g4 btrfs: PASS, g5 bbr/cake: PASS, g7 usb/bt/ppp: PASS
-# Rejected: nftables/bridge-netfilter (breaks device/netdevice CRCs)
-#           zswap (breaks v4l2/video CRCs)
+# ---------- v1.3: ABI-verified safe groups (vendor CRC + duplicate-symbol checked) ----------
 
 # g2 socket diagnostics
 CONFIG_PACKET_DIAG=y
@@ -41,12 +37,16 @@ CONFIG_9P_FS=y
 CONFIG_BTRFS_FS=y
 CONFIG_BTRFS_FS_POSIX_ACL=y
 
-# g5 congestion control
+# g5 congestion control (advanced menu must be enabled or BBR is silently dropped)
+CONFIG_TCP_CONG_ADVANCED=y
 CONFIG_TCP_CONG_BBR=y
 CONFIG_NET_SCH_CAKE=y
 
-# g7 USB / BT / PPP drivers
-CONFIG_USB_CONFIGFS_RNDIS=y
+# g7 USB serial / CDC / usbnet / BT-USB / PPP drivers
+# NOTE: CONFIG_USB_CONFIGFS_RNDIS is deliberately NOT set: it exports rndis_*
+# that the vendor usb_f_gsi.ko also exports, which makes usb_f_gsi fail to load
+# and takes down ipam -> ipa_* -> qca_cld3 (WiFi). The vendor module already
+# provides RNDIS/GSI.
 CONFIG_USB_ACM=y
 CONFIG_USB_SERIAL=y
 CONFIG_USB_SERIAL_CH341=y
