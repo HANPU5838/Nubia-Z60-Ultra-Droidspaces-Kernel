@@ -1,0 +1,44 @@
+name: build-a14-v13-final
+
+on:
+  push:
+    tags: [ 'final*' ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev \
+            cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
+      - name: Install AOSP clang r487747c
+        run: |
+          mkdir -p $HOME/clang
+          curl -L --retry 3 -o clang.tar.gz \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/android-14.0.0_r1/clang-r487747c.tar.gz"
+          tar xzf clang.tar.gz -C $HOME/clang
+          echo "LLVM_BIN=$HOME/clang/bin" >> $GITHUB_ENV
+      - name: Build v1.3
+        run: |
+          export PATH="$LLVM_BIN:$PATH"
+          export LLVM=1
+          FRAGMENT_FILE=config.fragment.v13 VARIANT=v13 bash build-a14.sh
+      - name: Vendor CRC check (hard gate)
+        run: |
+          python3 scripts/vendor_crc_check.py out-a14-v13/Module.symvers
+      - name: Upload Image + symvers
+        uses: actions/upload-artifact@v4
+        with:
+          name: v13-final
+          path: |
+            out-a14-v13/Image
+            out-a14-v13/Module.symvers
+          retention-days: 90
