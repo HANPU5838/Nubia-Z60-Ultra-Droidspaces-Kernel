@@ -1,0 +1,98 @@
+name: build-a14-v12-crc-guard
+
+on:
+  workflow_dispatch:
+  push:
+    tags: [ 'v1.2*' ]
+
+permissions:
+  contents: write
+
+jobs:
+  baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev \
+            cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
+      - name: Install AOSP clang r487747c
+        run: |
+          mkdir -p $HOME/clang
+          curl -L --retry 3 -o clang.tar.gz \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/android-14.0.0_r1/clang-r487747c.tar.gz"
+          tar xzf clang.tar.gz -C $HOME/clang
+          echo "LLVM_BIN=$HOME/clang/bin" >> $GITHUB_ENV
+      - name: Build baseline (v1.0 exact config)
+        run: |
+          export PATH="$LLVM_BIN:$PATH"
+          export LLVM=1
+          VARIANT=baseline bash build-a14.sh
+      - name: Upload baseline symvers
+        uses: actions/upload-artifact@v4
+        with:
+          name: symvers-baseline
+          path: out-a14-baseline/Module.symvers
+          retention-days: 30
+
+  candidate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev \
+            cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
+      - name: Install AOSP clang r487747c
+        run: |
+          mkdir -p $HOME/clang
+          curl -L --retry 3 -o clang.tar.gz \
+            "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/android-14.0.0_r1/clang-r487747c.tar.gz"
+          tar xzf clang.tar.gz -C $HOME/clang
+          echo "LLVM_BIN=$HOME/clang/bin" >> $GITHUB_ENV
+      - name: Build candidate (v1.2 fragment)
+        run: |
+          export PATH="$LLVM_BIN:$PATH"
+          export LLVM=1
+          VARIANT=v12 bash build-a14.sh
+      - name: Upload candidate Image + symvers
+        uses: actions/upload-artifact@v4
+        with:
+          name: candidate-v12
+          path: |
+            out-a14-v12/Image
+            out-a14-v12/Module.symvers
+          retention-days: 30
+
+  crc-guard:
+    needs: [baseline, candidate]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download baseline symvers
+        uses: actions/download-artifact@v4
+        with:
+          name: symvers-baseline
+          path: baseline
+      - name: Download candidate symvers
+        uses: actions/download-artifact@v4
+        with:
+          name: candidate-v12
+          path: candidate
+      - name: CRC guard (fail on any exported-symbol CRC change)
+        run: |
+          ls -la baseline candidate
+          python3 scripts/crc_guard.py baseline/Module.symvers candidate/Module.symvers

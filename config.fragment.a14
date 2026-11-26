@@ -1,0 +1,96 @@
+# ============================================================================
+# NX721J (Z60 Ultra / sm8650) — Android 14 / MyOS 14.5.6MR2
+# v1.2 "CRC-SAFE" fragment — base: legacy/nx721j-a14-stock.config
+# ACK android14-6.1 @ 716498f88d0f — version -android14-11-g716498f88d0f-ab11695701
+#
+# HARD RULES (learned the hard way, 2026-11-26 bootloop):
+#   * The vendor's 434 closed-source modules match the kernel by
+#     vermagic AND per-symbol CRCs. Anything that changes an existing
+#     exported symbol's CRC => modules refuse to load => bootloop.
+#   * FORBIDDEN forever: CONFIG_CFS_BANDWIDTH, CONFIG_CGROUP_PIDS,
+#     CONFIG_CGROUP_DEVICE, CONFIG_CGROUP_NET_CLASSID and any other
+#     cgroup-controller option.
+#   * FORBIDDEN for this kernel: CONFIG_SECURITY_APPARMOR,
+#     CONFIG_SECURITY_YAMA (LSM hook list changes), CONFIG_FANOTIFY,
+#     CONFIG_PERSISTENT_KEYRINGS, CONFIG_CHECKPOINT_RESTORE.
+#   * Do NOT touch CONFIG_LSM. Keep the exact stock version string.
+#   * Only "pure new code" options are allowed here: new drivers,
+#     filesystems, netfilter modules, congestion control, compressors.
+#     The CI CRC guard (scripts/crc_guard.py) must report 0 changes.
+# ============================================================================
+
+# ---------- v1.0 Droidspaces core (must keep) ----------
+CONFIG_SYSVIPC=y
+CONFIG_POSIX_MQUEUE=y
+CONFIG_IPC_NS=y
+CONFIG_PID_NS=y
+CONFIG_USER_NS=y
+CONFIG_DEVTMPFS=y
+CONFIG_NETFILTER_XT_MATCH_ADDRTYPE=y
+CONFIG_IP6_NF_NAT=y
+CONFIG_IP6_NF_TARGET_MASQUERADE=y
+CONFIG_MACVLAN=y
+CONFIG_NETFILTER_XT_TARGET_REJECT=y
+CONFIG_NETFILTER_XT_TARGET_LOG=y
+CONFIG_NETFILTER_XT_MATCH_RECENT=y
+CONFIG_IP_SET=y
+CONFIG_IP_SET_HASH_IP=y
+CONFIG_IP_SET_HASH_NET=y
+CONFIG_NETFILTER_XT_SET=y
+CONFIG_TMPFS_POSIX_ACL=y
+CONFIG_TMPFS_XATTR=y
+
+# ---------- v1.2: nftables (pure new code) ----------
+CONFIG_NF_TABLES=y
+CONFIG_NF_TABLES_INET=y
+CONFIG_NF_TABLES_IPV4=y
+CONFIG_NF_TABLES_IPV6=y
+CONFIG_NF_TABLES_NETDEV=y
+CONFIG_NFT_NAT=y
+CONFIG_NFT_MASQ=y
+CONFIG_NFT_REDIR=y
+CONFIG_NFT_CT=y
+CONFIG_NFT_LOG=y
+CONFIG_NFT_REJECT=y
+CONFIG_NF_CONNTRACK_BRIDGE=y
+CONFIG_BRIDGE_NETFILTER=y
+CONFIG_NETFILTER_XT_MATCH_PHYSDEV=y
+
+# ---------- v1.2: socket diagnostics (pure new code) ----------
+CONFIG_PACKET_DIAG=y
+CONFIG_UNIX_DIAG=y
+CONFIG_NETLINK_DIAG=y
+
+# ---------- v1.2: filesystems (pure new code) ----------
+CONFIG_NFS_FS=y
+CONFIG_NFS_V4=y
+CONFIG_NFS_V4_1=y
+CONFIG_NET_9P=y
+CONFIG_NET_9P_FD=y
+CONFIG_9P_FS=y
+CONFIG_BTRFS_FS=y
+CONFIG_BTRFS_FS_POSIX_ACL=y
+
+# ---------- v1.2: performance (pure new code) ----------
+CONFIG_TCP_CONG_BBR=y
+CONFIG_NET_SCH_CAKE=y
+CONFIG_ZSWAP=y
+CONFIG_ZBUD=y
+CONFIG_ZSWAP_DEFAULT_ON=n
+
+# ---------- v1.2: USB gadget RNDIS (stock lacks it; pure new function) ----------
+CONFIG_USB_CONFIGFS_RNDIS=y
+
+# ---------- v1.2: USB serial / CDC / usbnet host / BT USB (pure new drivers) ----------
+CONFIG_USB_ACM=y
+CONFIG_USB_SERIAL=y
+CONFIG_USB_SERIAL_CH341=y
+CONFIG_USB_SERIAL_PL2303=y
+CONFIG_USB_SERIAL_CP210X=y
+CONFIG_USB_SERIAL_FTDI_SIO=y
+CONFIG_BT_HCIBTUSB=y
+CONFIG_USB_NET_RNDIS_HOST=y
+CONFIG_USB_NET_CDCETHER=y
+CONFIG_USBNET=y
+CONFIG_PPP=y
+CONFIG_PPP_ASYNC=y

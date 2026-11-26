@@ -1,0 +1,65 @@
+name: diag-a14-config
+
+on:
+  push:
+    tags: [ 'diag*' ]
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL || true
+          sudo apt-get clean
+      - name: Install deps
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq build-essential bc bison flex libssl-dev libelf-dev cpio lz4 zstd dwarves python3 kmod zip unzip xz-utils
+      - name: Install clang
+        run: |
+          mkdir -p $HOME/clang
+          curl -L --retry 3 -o clang.tar.gz "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/android-14.0.0_r1/clang-r487747c.tar.gz"
+          tar xzf clang.tar.gz -C $HOME/clang
+          echo "LLVM_BIN=$HOME/clang/bin" >> $GITHUB_ENV
+      - name: Generate configs and diff
+        run: |
+          export PATH="$LLVM_BIN:$PATH"
+          export LLVM=1
+          set -e
+          mkdir -p work/ack
+          curl -L --retry 3 -o work/ack.tar.gz "https://android.googlesource.com/kernel/common/+archive/716498f88d0f.tar.gz"
+          tar xzf work/ack.tar.gz -C work/ack
+          cd work/ack
+          echo -n "" > .scmversion
+
+          make_config() {
+            local FRAG="$1" OUT="$2"
+            rm -f .config
+            cp "$GITHUB_WORKSPACE/legacy/nx721j-a14-stock.config" .config
+            cat "$FRAG" >> .config
+            patch -p1 -N < "$GITHUB_WORKSPACE/legacy/001.GKI-below-6.12-fix_sysvipc_kabi_3_4_5.patch" >/dev/null 2>&1 || true
+            sed -i "s|^CONFIG_LOCALVERSION=.*|CONFIG_LOCALVERSION=\"-android14-11-g716498f88d0f-ab11695701\"|" .config
+            sed -i 's|^CONFIG_LOCALVERSION_AUTO=.*|# CONFIG_LOCALVERSION_AUTO is not set|' .config
+            sed -i 's|^CONFIG_TRIM_UNUSED_KSYMS=.*|# CONFIG_TRIM_UNUSED_KSYMS is not set|' .config
+            sed -i 's|^CONFIG_MODULE_SIG_PROTECT=.*|# CONFIG_MODULE_SIG_PROTECT is not set|' .config
+            sed -i "s|^CONFIG_SYSTEM_TRUSTED_KEYS=.*|CONFIG_SYSTEM_TRUSTED_KEYS=\"$GITHUB_WORKSPACE/legacy/certs/nubia-signing-key-a14.pem\"|" .config
+            make -j"$(nproc)" ARCH=arm64 LLVM=1 LOCALVERSION= olddefconfig >/dev/null 2>&1
+            cp .config "$OUT"
+          }
+
+          make_config "$GITHUB_WORKSPACE/config.fragment"     "$GITHUB_WORKSPACE/baseline.config"
+          make_config "$GITHUB_WORKSPACE/config.fragment.a14" "$GITHUB_WORKSPACE/candidate.config"
+
+          echo "=== DIFF baseline -> candidate ==="
+          diff "$GITHUB_WORKSPACE/baseline.config" "$GITHUB_WORKSPACE/candidate.config" | head -300 || true
+          echo "=== END DIFF ==="
+      - name: Upload configs
+        uses: actions/upload-artifact@v4
+        with:
+          name: a14-configs
+          path: |
+            baseline.config
+            candidate.config
